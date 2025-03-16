@@ -1,12 +1,13 @@
 class Sensor:
-    def __init__(self, name, value=None, location=None, status=None, last_updated=None, battery_level=None, connection_type=None):
+    def __init__(self, name, value=None, status=None, last_updated=None, id_s, chastota_sec=1, count_of_data=3 ):
         self.name = name
-        self.location = location
+        self.id_s = id_s
         self.status = status
         self.last_updated = last_updated
-        self.battery_level = battery_level
-        self.connection_type = connection_type
         self.value = value
+        self.count_of_data = count_of_data # число данных отправленных
+        self.chastota = chastota # частота отправки данных
+
 
     def get_value(self):
         """Получить текущее значение датчика"""
