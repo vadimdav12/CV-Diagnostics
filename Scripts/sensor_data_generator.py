@@ -3,7 +3,7 @@ from sensor_models import ThermalSensor, VibrationSensor, ElectricSensor, Sensor
 from sensors_data import sensors
 
 def get_random_sensor_value(type_sensor):
-    """Получаем рандомные значения виртуальных датчиков
+    """Получаем рандомные значения датчиков
     type_sensors:
         * thermal_sensors - тепловые датчики
         * electrical_sensors - электрические датчики

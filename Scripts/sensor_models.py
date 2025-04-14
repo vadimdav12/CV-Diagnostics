@@ -10,11 +10,11 @@ class Sensor:
 
 
     def get_value(self):
-        """Получить текущее значение датчика"""
+        """Получить текущее значение  датчика"""
         return self.value()
 
     def get_status(self):
-        """Получить текущее состояние датчика"""
+        """Получить текущее состояние  датчика"""
         status_info = {'name': self.name, 'data': self.data, 'location': self.location, 'status': self.status,
                        'last_updated': self.last_updated, 'battery_level': self.battery_level,
                        'connection_type': self.connection_type}
