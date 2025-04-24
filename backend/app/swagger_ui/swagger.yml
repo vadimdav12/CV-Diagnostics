@@ -1,0 +1,552 @@
+openapi: 3.0.0
+info:
+  title: Sample API
+  version: 1.0.0
+tags:
+  - name: Roles
+    description: Операции с ролями и пользователями
+  - name: Sensors
+    description: Операции для работы с Sensors
+  - name: Sensor_type
+    description: Операции для работы с Sensor_type
+  - name: Equipment
+    description: Операции для работы с Equipment
+servers:
+  - url: http://127.0.0.1:5000/
+paths:
+  /api/users/roles:
+    get:
+      summary: Получите все Роли
+      tags:
+        - Roles
+      responses:
+        '200':
+          description: Список Ролей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+  /protected:
+    get:
+      summary: Получить роль
+      tags:
+        - Roles
+      responses:
+        '200':
+          description: тест роли
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: []
+  /api/users/:
+    get:
+      summary: Получите всех пользователей
+      tags:
+        - Roles
+      responses:
+        '200':
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+      security:
+        - BearerAuth: []
+  /api/users/add:
+    post:
+      summary: Добавить пользователя
+      tags:
+        - Roles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: username
+                password:
+                  type: string
+                  description: password
+                email:
+                  type: string
+                  description: email
+                role:
+                  type: string
+                  description: role
+              required:
+                - username
+                - password
+                - email
+                - role
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: []
+  /api/users/{id}:
+    delete:
+      summary: Удалить пользователя
+      tags:
+        - Roles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID пользователя
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: []
+    put:
+      summary: Изменить пользователя
+      tags:
+        - Roles
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: username
+                password:
+                  type: string
+                  description: password
+                email:
+                  type: string
+                  description: email
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: []
+  /api/users/token:
+    post:
+      summary: Login
+      tags:
+        - Roles
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  description: Логин
+                password:
+                  type: string
+                  description: Пароль
+              required:
+                - login
+                - password
+      responses:
+        '200':
+          description: Токен jwt
+          content:
+            application/json:
+              schema:
+                type: string
+
+  /api/sensors/:
+    get:
+      summary: Получите всех Sensors
+      tags:
+        - Sensors
+      responses:
+        '200':
+          description: Список Sensors
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor'
+      security:
+        - BearerAuth: [ ]
+  /api/sensors/add:
+    post:
+      summary: Добавить Sensor
+      tags:
+        - Sensors
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+                data_source:
+                  type: string
+                  description: data_source
+                sensor_type_id:
+                  type: integer
+                  description: sensor_type_id
+                equipment_id:
+                  type: integer
+                  description: equipment_id
+              required:
+                - name
+                - data_source
+                - sensor_type_id
+                - equipment_id
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+  /api/sensors/{id}:
+    delete:
+      summary: Удалить Sensor
+      tags:
+        - Sensors
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Sensor
+      tags:
+        - Sensors
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+                data_source:
+                  type: string
+                  description: data_source
+                sensor_type_id:
+                  type: integer
+                  description: sensor_type_id
+                equipment_id:
+                  type: integer
+                  description: equipment_id
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+
+  /api/sensor-type/:
+    get:
+      summary: Получите всех Sensor_type
+      tags:
+        - Sensor_type
+      responses:
+        '200':
+          description: Список Sensor_type
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor_type'
+      security:
+        - BearerAuth: [ ]
+  /api/sensor-type/add:
+    post:
+      summary: Добавить Sensor_type
+      tags:
+        - Sensor_type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+              required:
+                - name
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+  /api/sensor-type/{id}:
+    delete:
+      summary: Удалить Sensor_type
+      tags:
+        - Sensor_type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor_type
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Sensor_type
+      tags:
+        - Sensor_type
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor_type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+
+  /api/equipment/:
+    get:
+      summary: Получите всех Equipment
+      tags:
+        - Equipment
+      responses:
+        '200':
+          description: Список Equipment
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Equipment'
+      security:
+        - BearerAuth: [ ]
+  /api/equipment/add:
+    post:
+      summary: Добавить Equipment
+      tags:
+        - Equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+              required:
+                - name
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+  /api/equipment/{id}:
+    delete:
+      summary: Удалить Equipment
+      tags:
+        - Equipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Equipment
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Equipment
+      tags:
+        - Equipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+components:
+  schemas:
+    Role:
+      type: object
+      description: Роль пользователя
+      properties:
+        name:
+          type: string
+          description: Название роли
+    User:
+      type: object
+      description: Пользователь
+      properties:
+        id:
+          type: integer
+          description: ID пользователя
+        username:
+          type: string
+          description: Имя пользователя
+        email:
+          type: string
+          description: Email пользователя
+        role:
+          type: string
+          description: Роль пользователя
+    Sensor:
+      type: object
+      description: Sensor
+      properties:
+        id:
+          description: Id Sensor
+          type: integer
+        data_source:
+          description: data_source Sensor
+          type: string
+        sensor_type:
+          description: sensor_type Sensor
+          type: string
+        equipment:
+          description: equipment Sensor
+          type: string
+    Sensor_type:
+      type: object
+      description: Sensor_type
+      properties:
+        id:
+          description: Id Sensor_type
+          type: integer
+        name:
+          type: string
+          description: Название
+    Equipment:
+      type: object
+      description: Equipment
+      properties:
+        id:
+          description: Id Equipment
+          type: integer
+        name:
+          type: string
+          description: Название
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
