@@ -1,6 +1,17 @@
-.git
-.idea
-.frontend
+# Игнорируем зависимости
+node_modules/
 .env
+instance/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.log
+.DS_Store
+.cache/
+build/
+dist/
+coverage/
+.vscode/
+*.sqlite3
+*.db
