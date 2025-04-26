@@ -28,7 +28,8 @@ def create_app():
     app.config.from_pyfile('config.py', silent=True)
 
     # Разрешение CORS
-    CORS(app)
+    CORS(app, supports_credentials=True)
+
 
     # Настройка конфигурации из .env или config.py
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI') or app.config.get('SQLALCHEMY_DATABASE_URI')
