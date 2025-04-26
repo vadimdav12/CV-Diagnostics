@@ -2,88 +2,89 @@ import datetime
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, send_from_directory, abort
-
+from flask import Flask, send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
-from flask_migrate import Migrate
 from flask_swagger_ui import get_swaggerui_blueprint
-from  werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import generate_password_hash
 
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_sqlalchemy import SQLAlchemy
 
-# Инициализация SQLAlchemy
+# Инициализация расширений
 db = SQLAlchemy()
-# Переменная для user_datastore (будет инициализирована в create_app)
 user_datastore = None
 
 def create_app():
-    global user_datastore  #user_datastore глобальной переменной
+    global user_datastore
 
-    # Загружаем переменные из файла .env
+    # Загружаем переменные окружения
     load_dotenv()
 
-    app = Flask(__name__, static_folder=None)
-    CORS(app)  # Разрешить CORS для всех маршрутов
+    # Инициализация Flask
+    app = Flask(__name__, instance_relative_config=True)
 
-    # Конфигурация базы данных
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS')
-    app.config['JSON_AS_ASCII'] = os.getenv('JSON_AS_ASCII')
-    app.config['JSON_SORT_KEYS'] = os.getenv('JSON_SORT_KEYS')
-    # Настройка Flask-Security
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-    app.config['SECURITY_PASSWORD_SALT'] = os.getenv('SECURITY_PASSWORD_SALT')
-    app.config['SECURITY_JOIN_USER_ROLES'] = os.getenv('SECURITY_JOIN_USER_ROLES')
-    # Настройка JWT
-    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY') # Секретный ключ для подписи токенов
+    # Загружаем config.py
+    app.config.from_pyfile('config.py', silent=True)
 
-    # Инициализация SQLAlchemy
+    # Разрешение CORS
+    CORS(app)
+
+    # Настройка конфигурации из .env или config.py
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI') or app.config.get('SQLALCHEMY_DATABASE_URI')
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = os.getenv('SQLALCHEMY_TRACK_MODIFICATIONS', 'False') == 'True'
+    app.config['JSON_AS_ASCII'] = os.getenv('JSON_AS_ASCII', 'False') == 'True'
+    app.config['JSON_SORT_KEYS'] = os.getenv('JSON_SORT_KEYS', 'False') == 'True'
+
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY') or app.config.get('SECRET_KEY')
+    app.config['SECURITY_PASSWORD_SALT'] = os.getenv('SECURITY_PASSWORD_SALT') or app.config.get('SECURITY_PASSWORD_SALT')
+    app.config['SECURITY_JOIN_USER_ROLES'] = os.getenv('SECURITY_JOIN_USER_ROLES', 'False') == 'True'
+    app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY') or app.config.get('JWT_SECRET_KEY')
+
+    # Инициализация расширений
     db.init_app(app)
-    # Инициализация Flask-Migrate
-    #migrate = Migrate(app, db)
+    jwt = JWTManager(app)
 
+    # Swagger статические файлы
     @app.route('/swagger_ui/<path:path>')
     def send_static(path):
         return send_from_directory('swagger_ui', path)
 
-    # Конфигурация для Swagger UI
-    SWAGGER_URL = '/swagger'  # URL для доступа к Swagger UI
+    # Swagger UI конфигурация
+    SWAGGER_URL = '/swagger'
     API_URL = '/swagger_ui/swagger.yml'
-
-    # Создание Swagger UI blueprint
-    swaggerui_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL, config={'app_name': "Sample API"})
-
-    # Регистрация Swagger UI blueprint в приложении
+    swaggerui_blueprint = get_swaggerui_blueprint(
+        SWAGGER_URL,
+        API_URL,
+        config={'app_name': "CV Diagnostics API"}
+    )
     app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
-    from app.models.users import Role
-    from app.models.users import User
-    # Создаем user_datastore
+    # Импорт моделей для Flask-Security
+    from app.models.users import Role, User
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
-    jwt = JWTManager(app)
-
-    def create_roles():
+    # Функция создания начальных данных
+    def create_roles_and_users():
         user_datastore.create_role(id=1, name='admin', description="Admin")
         user_datastore.create_role(id=3, name='user', description="User")
 
-        user_datastore.create_user(username='admin', email='1@mail.ru',password_hash=generate_password_hash('admin'))
+        user_datastore.create_user(username='admin', email='1@mail.ru', password_hash=generate_password_hash('admin'))
         user_datastore.create_user(username='manager', email='2@mail.ru', password_hash=generate_password_hash('manager'))
         user_datastore.create_user(username='user', email='3@mail.ru', password_hash=generate_password_hash('user'))
         db.session.commit()
-        user = user_datastore.find_user(username='admin')
-        admin_role = user_datastore.find_role('admin')
 
-        user_datastore.add_role_to_user(user, admin_role)
-        user_datastore.add_role_to_user(user_datastore.find_user(username='manager'), user_datastore.find_role('user'))
-        user_datastore.add_role_to_user(user_datastore.find_user(username='user'), user_datastore.find_role('user'))
+        admin = user_datastore.find_user(username='admin')
+        user_role = user_datastore.find_role('user')
+
+        user_datastore.add_role_to_user(admin, user_datastore.find_role('admin'))
+        user_datastore.add_role_to_user(user_datastore.find_user(username='manager'), user_role)
+        user_datastore.add_role_to_user(user_datastore.find_user(username='user'), user_role)
         db.session.commit()
 
-        print("Roles created successfully!")
+        print("Roles and Users created successfully!")
 
-    def create_sensors():
+    def create_sensors_and_equipment():
         from app.models.sensor_type import Sensor_type
         from app.models.parameter import Parameter
         from app.models.sensor import Sensor
@@ -91,8 +92,11 @@ def create_app():
         from app.models.sensor_record import Sensor_Record
         from app.models.equipment import Equipment
 
+        # Очистка и пересоздание таблиц
         db.drop_all()
         db.create_all()
+
+        # Очистка данных
         Sensor_type.query.delete()
         Parameter.query.delete()
         Sensor.query.delete()
@@ -101,43 +105,41 @@ def create_app():
         Equipment.query.delete()
         db.session.commit()
 
-        n_q = Equipment(name="RS344")
-        db.session.add(n_q)
-        new_type = Sensor_type(name="тепловой")
-        db.session.add(new_type)
-        n_p = Parameter(name="Смещение", unit="мкм")
-        db.session.add(n_p)
-        db.session.commit()
-        n_s=Sensor(name="D1",data_source="d/1/t1/122", sensor_type=new_type,equipment=n_q)
-        db.session.add(n_s)
-        db.session.commit()
-        s_p = Sensor_parameter(sensor=n_s, parameter=n_p)
-        db.session.add(s_p)
-        db.session.commit()
-        with db.session.no_autoflush:
-            t1 = Sensor_Record(timestamp=datetime.datetime.now(),value=0.11, sensor=n_s, parameter=n_p)
-            db.session.add(t1)
+        # Добавление тестовых данных
+        equipment = Equipment(name="RS344")
+        db.session.add(equipment)
+
+        sensor_type = Sensor_type(name="тепловой")
+        db.session.add(sensor_type)
+
+        parameter = Parameter(name="Смещение", unit="мкм")
+        db.session.add(parameter)
+
         db.session.commit()
 
+        sensor = Sensor(name="D1", data_source="d/1/t1/122", sensor_type=sensor_type, equipment=equipment)
+        db.session.add(sensor)
+        db.session.commit()
 
-        r = Sensor_Record.query.all()
-        for e in r:
-            print(e.timestamp, e.value)
-        #new_type = Parameter(name="тепловой")
-    # Удаление и Создание базы данных и таблиц
+        sensor_param = Sensor_parameter(sensor=sensor, parameter=parameter)
+        db.session.add(sensor_param)
+        db.session.commit()
+
+        record = Sensor_Record(timestamp=datetime.datetime.now(), value=0.11, sensor=sensor, parameter=parameter)
+        db.session.add(record)
+        db.session.commit()
+
+        print("Sensors and Equipment created successfully!")
+
+    # Создание базы и первичных данных
     with app.app_context():
         db.drop_all()
         db.create_all()
-        # удаление данных таблиц
-        Role.query.delete()
-        User.query.delete()
+        create_sensors_and_equipment()
+        create_roles_and_users()
 
-        db.session.commit()
-        create_sensors()
-        create_roles()
-
+    # Регистрация всех маршрутов
     from app.routes import register_routes
-    # Регистрация всех роутов
     register_routes(app)
 
     return app
