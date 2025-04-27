@@ -28,8 +28,11 @@ def create_app():
     app.config.from_pyfile('config.py', silent=True)
 
     # Разрешение CORS
-    CORS(app, supports_credentials=True)
-
+    CORS(
+        app,
+        resources={r"/api/*": {"origins": "http://localhost:3000"}},
+        supports_credentials=True
+    )
 
     # Настройка конфигурации из .env или config.py
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI') or app.config.get('SQLALCHEMY_DATABASE_URI')
@@ -41,6 +44,7 @@ def create_app():
     app.config['SECURITY_PASSWORD_SALT'] = os.getenv('SECURITY_PASSWORD_SALT') or app.config.get('SECURITY_PASSWORD_SALT')
     app.config['SECURITY_JOIN_USER_ROLES'] = os.getenv('SECURITY_JOIN_USER_ROLES', 'False') == 'True'
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY') or app.config.get('JWT_SECRET_KEY')
+    app.config['JWT_IDENTITY_CLAIM'] = 'sub'
 
     # Инициализация расширений
     db.init_app(app)

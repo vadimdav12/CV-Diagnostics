@@ -1,7 +1,12 @@
 import React from 'react';
-import Routes from './routes';
+import NavBar from './components/NavBar';
+import AppRoutes from './routes';
 
-const App = () => <Routes />;
-
-export default App;
-
+export default function App() {
+  return (
+    <>
+      <NavBar />
+      <AppRoutes />
+    </>
+  );
+}

@@ -1,5 +1,4 @@
 from datetime import timedelta
-import datetime
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
@@ -12,37 +11,30 @@ from ..models.users import Role, User
 
 users_bp = Blueprint('users', __name__)
 
-@users_bp.route('/roles/')
+@users_bp.route('/roles/', methods=['GET'])
+@jwt_required()
 def show_roles():
     roles = Role.query.all()
     return jsonify([{'id': role.id, 'name': role.name} for role in roles])
 
-@users_bp.route('/', methods=['GET', 'OPTIONS'])
+@users_bp.route('/', methods=['GET'])
+@jwt_required()
 def show_users():
-    if request.method == 'OPTIONS':
-        return '', 200
-
     users = User.query.all()
     return jsonify([
-        {'id': user.id, 'login': user.username, 'password': user.password_hash,
-         'email': user.email, 'role': [i.name for i in user.roles]}
+        {'id': user.id, 'login': user.username, 'email': user.email, 'role': [r.name for r in user.roles]}
         for user in users
     ])
 
-@users_bp.route('/protected', methods=['GET', 'OPTIONS'])
+@users_bp.route('/protected', methods=['GET'])
 @jwt_required()
 def protected():
-    if request.method == 'OPTIONS':
-        return '', 200
-
     user_id = get_jwt_identity()
     return jsonify(logged_in_as=user_id), 200
 
-@users_bp.route('/add', methods=['POST', 'OPTIONS'])
+@users_bp.route('/add', methods=['POST'])
+@jwt_required()
 def add_user():
-    if request.method == 'OPTIONS':
-        return '', 200
-
     data = request.get_json()
     if not data or not data.get('username') or not data.get('email') or not data.get('password'):
         return jsonify({'error': 'Username, email and password are required'}), 400
@@ -50,27 +42,29 @@ def add_user():
     if User.query.filter_by(username=data['username']).first() or User.query.filter_by(email=data['email']).first():
         return jsonify({'error': 'Username or email already exists'}), 400
 
-    username = data['username']
-    password = data['password']
-    new_user = User(username=username, email=data['email'], password_hash=generate_password_hash(password))
+    new_user = User(
+        username=data['username'],
+        email=data['email'],
+        password_hash=generate_password_hash(data['password'])
+    )
     db.session.add(new_user)
     db.session.commit()
 
     role_name = data.get('role')
     if role_name:
         role = user_datastore.find_role(role_name)
-        user_datastore.add_role_to_user(new_user, role)
-        db.session.commit()
+        if role:
+            user_datastore.add_role_to_user(new_user, role)
+            db.session.commit()
 
     return jsonify(new_user.to_dict()), 201
 
-@users_bp.route('/<user_id>', methods=['PUT', 'OPTIONS'])
+@users_bp.route('/<user_id>', methods=['PUT'])
+@jwt_required()
 def update_user(user_id):
-    if request.method == 'OPTIONS':
-        return '', 200
-
     user = User.query.get_or_404(user_id)
     data = request.get_json()
+
     if not data:
         return jsonify({'error': 'No data provided'}), 400
 
@@ -87,23 +81,19 @@ def update_user(user_id):
     db.session.commit()
     return jsonify(user.to_dict()), 200
 
-@users_bp.route('/<user_id>', methods=['DELETE', 'OPTIONS'])
+@users_bp.route('/<user_id>', methods=['DELETE'])
+@jwt_required()
 def delete_user(user_id):
-    if request.method == 'OPTIONS':
-        return '', 200
-
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'User deleted successfully'}), 200
 
-@users_bp.route('/token', methods=['POST', 'OPTIONS'])
+@users_bp.route('/token', methods=['POST'])
 def token():
-    if request.method == 'OPTIONS':
-        return '', 200
-
     username = request.json.get('username', None)
     password = request.json.get('password', None)
+
     if not username or not password:
         return jsonify({'error': 'Username and password are required'}), 400
 
@@ -111,7 +101,14 @@ def token():
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'error': 'Could not verify'}), 401
 
-    additional_claims = {"role": [i.name for i in user.roles]}
-    expires = timedelta(minutes=120)
-    access_token = create_access_token(identity=user.id, expires_delta=expires, additional_claims=additional_claims)
+    additional_claims = {
+        "role": [r.name for r in user.roles],
+        "username": user.username  # <-- добавили имя
+    }
+    access_token = create_access_token(
+        identity=str(user.id),
+        expires_delta=timedelta(minutes=120),
+        additional_claims=additional_claims
+    )
+
     return jsonify(access_token=access_token, role=additional_claims['role'], user_id=user.id), 200
