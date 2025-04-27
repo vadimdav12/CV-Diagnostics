@@ -18,11 +18,12 @@ const Login = () => {
     try {
       const res = await login(username, password);
       localStorage.setItem('access_token', res.data.access_token);
-      navigate('/users');
+      navigate('/', { replace: true });       // ← сюда
     } catch (err) {
       setError('Ошибка авторизации. Проверьте логин и пароль.');
     }
   };
+
 
   return (
     <Container maxWidth="xs">

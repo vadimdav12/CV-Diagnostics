@@ -1,37 +1,26 @@
-// frontend/src/api.js
 import axios from 'axios';
 
-// Создаём инстанс axios с базовым URL и JSON по умолчанию
 const api = axios.create({
   baseURL: 'http://localhost:5000/api',
-  headers: {
-    'Content-Type': 'application/json'
-  }
+  headers: { 'Content-Type': 'application/json' },
 });
 
-// Интерцептор для автоподстановки JWT в заголовок
+// Авто-подставляем JWT
 api.interceptors.request.use(config => {
   const token = localStorage.getItem('access_token');
-  if (token) {
-    config.headers['Authorization'] = `Bearer ${token}`;
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
-}, error => Promise.reject(error));
+});
 
-// Эндпоинты
-export const login = (username, password) =>
-  api.post('/users/token', { username, password });
+// Существующие методы…
+export const login       = (u, p) => api.post('/users/token', { username: u, password: p });
+export const fetchUsers  = ()      => api.get('/users/');
+export const addUser     = (d)     => api.post('/users/add', d);
+export const updateUser  = (id, d) => api.put(`/users/${id}`, d);
+export const deleteUser  = (id)    => api.delete(`/users/${id}`);
 
-export const fetchUsers = () =>
-  api.get('/users/');
-
-export const addUser = (userData) =>
-  api.post('/users/add', userData);
-
-export const deleteUser = (userId) =>
-  api.delete(`/users/${userId}`);
-
-export const updateUser = (userId, updatedData) =>
-  api.put(`/users/${userId}`, updatedData);
+// Новый метод для оборудования
+export const fetchEquipments = () =>
+  api.get('/equipment/');
 
 export default api;

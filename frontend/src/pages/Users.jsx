@@ -1,11 +1,27 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Button, Stack } from '@mui/material';
+import { Container, Typography, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Stack } from '@mui/material';
 import { fetchUsers, deleteUser } from '../api';
 import { useNavigate } from 'react-router-dom';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.role && payload.role.includes('admin')) {
+          setIsAdmin(true);
+          loadUsers(); // Загружаем только если админ
+        }
+      } catch (error) {
+        console.error('Ошибка парсинга токена', error);
+      }
+    }
+  }, []);
 
   const loadUsers = async () => {
     const token = localStorage.getItem('access_token');
@@ -21,19 +37,26 @@ const Users = () => {
     const token = localStorage.getItem('access_token');
     try {
       await deleteUser(userId, token);
-      loadUsers(); // перезагрузить после удаления
+      loadUsers(); // Перезагрузить список
     } catch (error) {
       console.error('Ошибка удаления пользователя', error);
     }
   };
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
+  if (!isAdmin) {
+    return (
+      <Container sx={{ mt: 8 }}>
+        <Typography variant="h5" color="error" align="center">
+          У вас нет доступа к просмотру пользователей.
+        </Typography>
+      </Container>
+    );
+  }
 
   return (
     <Container sx={{ mt: 4 }}>
       <Typography variant="h4" gutterBottom>Пользователи</Typography>
+
       <Button variant="contained" sx={{ mb: 2 }} onClick={() => navigate('/add-user')}>
         Добавить пользователя
       </Button>

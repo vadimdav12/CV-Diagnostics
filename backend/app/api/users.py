@@ -2,7 +2,7 @@ from datetime import timedelta
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import (
-    create_access_token, jwt_required, get_jwt_identity
+    create_access_token, jwt_required, get_jwt_identity, get_jwt
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -10,6 +10,12 @@ from app import db, user_datastore
 from ..models.users import Role, User
 
 users_bp = Blueprint('users', __name__)
+
+# Функция-помощник для проверки роли admin
+def admin_required():
+    claims = get_jwt()
+    if 'admin' not in claims.get('role', []):
+        return jsonify({'error': 'Admin privileges required'}), 403
 
 @users_bp.route('/roles/', methods=['GET'])
 @jwt_required()
@@ -35,6 +41,11 @@ def protected():
 @users_bp.route('/add', methods=['POST'])
 @jwt_required()
 def add_user():
+    # Проверяем права админа
+    error = admin_required()
+    if error:
+        return error
+
     data = request.get_json()
     if not data or not data.get('username') or not data.get('email') or not data.get('password'):
         return jsonify({'error': 'Username, email and password are required'}), 400
@@ -62,6 +73,11 @@ def add_user():
 @users_bp.route('/<user_id>', methods=['PUT'])
 @jwt_required()
 def update_user(user_id):
+    # Проверяем права админа
+    error = admin_required()
+    if error:
+        return error
+
     user = User.query.get_or_404(user_id)
     data = request.get_json()
 
@@ -84,6 +100,11 @@ def update_user(user_id):
 @users_bp.route('/<user_id>', methods=['DELETE'])
 @jwt_required()
 def delete_user(user_id):
+    # Проверяем права админа
+    error = admin_required()
+    if error:
+        return error
+
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
     db.session.commit()
@@ -103,7 +124,7 @@ def token():
 
     additional_claims = {
         "role": [r.name for r in user.roles],
-        "username": user.username  # <-- добавили имя
+        "username": user.username
     }
     access_token = create_access_token(
         identity=str(user.id),

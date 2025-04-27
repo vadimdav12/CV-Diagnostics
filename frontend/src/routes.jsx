@@ -1,43 +1,32 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Users from './pages/Users';
-import AddUser from './pages/AddUser';
-import PrivateRoute from './components/PrivateRoute';
-import EditUser from './pages/EditUser';
+import Login         from './pages/Login';
+import EquipmentList from './pages/EquipmentList';
+import Users         from './pages/Users';
+import AddUser       from './pages/AddUser';
+import EditUser      from './pages/EditUser';
+import PrivateRoute  from './components/PrivateRoute';
+import MainLayout    from './components/MainLayout';
 
-const AppRoutes = () => {
+export default function AppRoutes() {
   return (
     <Routes>
       {/* Страница логина */}
       <Route path="/login" element={<Login />} />
 
-      {/* Защищённая страница пользователей */}
-      <Route
-        path="/users"
-        element={
-          <PrivateRoute>
-            <Users />
-          </PrivateRoute>
-        }
-      />
+      {/* Всё, что ниже — только после авторизации */}
+      <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
+        {/* Главная — список оборудования */}
+        <Route path="/" element={<EquipmentList />} />
 
-      {/* Защищённая страница добавления пользователя */}
-      <Route
-        path="/add-user"
-        element={
-          <PrivateRoute>
-            <AddUser />
-          </PrivateRoute>
-        }
-      />
-      <Route path="/edit-user/:id" element={<PrivateRoute><EditUser /></PrivateRoute>} />
+        {/* Управление пользователями */}
+        <Route path="/users"      element={<Users />} />
+        <Route path="/add-user"   element={<AddUser />} />
+        <Route path="/edit-user/:id" element={<EditUser />} />
+      </Route>
 
-
-      {/* Перехват всех остальных маршрутов → редирект на /login */}
+      {/* Любой нераспознанный маршрут → логин */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
-};
-
-export default AppRoutes;
+}
