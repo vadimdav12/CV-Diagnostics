@@ -1,58 +1,94 @@
-from datetime import timedelta
-
-from flask import jsonify, make_response, request, abort, Blueprint
-from flask_jwt_extended import jwt_required, get_jwt_identity
-
-equipment_bp = Blueprint('equipment', __name__)
-
-from ..models.equipment import Equipment, Equipment
+from flask import Blueprint, jsonify, request
+from flask_jwt_extended import jwt_required
+from flask_cors import cross_origin
 from app import db
+from ..models.equipment import Equipment
+from ..models.sensor import Sensor
+from ..models.sensor_type import Sensor_type
+from ..models.parameter import Parameter
+from ..models.sensor_parameter import Sensor_parameter
 
-@equipment_bp.route('/')
-#@jwt_required()
+equipment_bp = Blueprint('equipment', __name__, url_prefix='/api/equipment')
+
+# 1) Список оборудования
+@equipment_bp.route('/', methods=['GET'])
+@jwt_required()
+@cross_origin(origins="http://localhost:3000", methods=["GET"])
 def show_equipment():
-    equipments = Equipment.query.all()
+    eqs = Equipment.query.all()
+    return jsonify([e.to_dict() for e in eqs]), 200
 
-    return jsonify([{'id': equipment.id, 'name': equipment.name} for equipment in equipments])
+# 2) Добавление оборудования
+@equipment_bp.route('/add', methods=['OPTIONS','POST'])
+@jwt_required()
+@cross_origin(origins="http://localhost:3000", methods=["OPTIONS","POST"])
+def add_equipment():
+    # предзапрос
+    if request.method == 'OPTIONS':
+        return '', 200
 
-# Добавление equipment
-@equipment_bp.route('/add', methods=['POST'])
-def add_sensor():
     data = request.get_json()
     if not data or not data.get('name'):
-        return jsonify({'error': 'name  required'}), 400
+        return jsonify({'error': 'name required'}), 400
 
     if Equipment.query.filter_by(name=data['name']).first():
-        return jsonify({'error': 'Equipment already exists'}), 400
+        return jsonify({'error': 'already exists'}), 400
 
-    new_equipment = Equipment(name=data['name'])
-    db.session.add(new_equipment)
+    new = Equipment(name=data['name'])
+    db.session.add(new)
     db.session.commit()
-    return jsonify(new_equipment.to_dict()), 201
+    return jsonify(new.to_dict()), 201
 
+# 3) Вложенный эндпоинт: добавить датчик к оборудованию
+@equipment_bp.route('/<int:equipment_id>/sensors', methods=['OPTIONS','POST'])
+@jwt_required()
+@cross_origin(origins="http://localhost:3000", methods=["OPTIONS","POST"])
+def add_sensor_to_equipment(equipment_id):
+    if request.method == 'OPTIONS':
+        return '', 200
 
-# Изменение equipment
-@equipment_bp.route('/<sensor_id>', methods=['PUT'])
-def update_sensor(sensor_id):
-    equipment = Equipment.query.get_or_404(sensor_id)
     data = request.get_json()
+    # проверка обязательных полей
+    required = ['name','data_source','sensor_type_id']
+    if not data or any(not data.get(f) for f in required):
+        return jsonify({'error': f'Fields {required} required'}), 400
 
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-
-    if 'name' in data:
-        if data['name'] != equipment.name and Equipment.query.filter_by(name=data['name']).first():
-            return jsonify({'error': 'name already exists'}), 400
-        equipment.name = data['name']
-
+    # создаём датчик
+    sensor = Sensor(
+        name=data['name'],
+        data_source=data['data_source'],
+        sensor_type_id=data['sensor_type_id'],
+        equipment_id=equipment_id
+    )
+    db.session.add(sensor)
     db.session.commit()
-    return jsonify(equipment.to_dict()), 200
 
+    # если нужны параметры — можно сразу связать, например:
+    # params = data.get('parameters', [])
+    # for pid in params:
+    #     sp = Sensor_parameter(sensor_id=sensor.id, parameter_id=pid)
+    #     db.session.add(sp)
+    # db.session.commit()
 
-# Удаление equipment
-@equipment_bp.route('/<equipment_id>', methods=['DELETE'])
-def delete_sensor(equipment_id):
-    equipment = Equipment.query.get_or_404(equipment_id)
-    db.session.delete(equipment)
+    return jsonify(sensor.to_dict()), 201
+
+# 4) Обновление и удаление оборудования (аналогично)
+@equipment_bp.route('/<int:equipment_id>', methods=['PUT','DELETE','OPTIONS'])
+@jwt_required()
+@cross_origin(origins="http://localhost:3000", methods=["OPTIONS","PUT","DELETE"])
+def modify_equipment(equipment_id):
+    if request.method == 'OPTIONS':
+        return '', 200
+
+    eq = Equipment.query.get_or_404(equipment_id)
+    if request.method == 'DELETE':
+        db.session.delete(eq)
+        db.session.commit()
+        return jsonify({'message': 'deleted'}), 200
+
+    # PUT
+    data = request.get_json()
+    if data.get('name'):
+        eq.name = data['name']
     db.session.commit()
-    return jsonify({'message': 'Equipment deleted successfully'}), 200
+    return jsonify(eq.to_dict()), 200

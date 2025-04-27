@@ -30,9 +30,11 @@ def create_app():
     # Разрешение CORS
     CORS(
         app,
-        resources={r"/api/*": {"origins": "http://localhost:3000"}},
-        supports_credentials=True
-    )
+        resources = {r"/api/*": {"origins": "http://localhost:3000"}},
+        supports_credentials = True,
+        allow_headers = ["Authorization", "Content-Type"],  # <— разрешаем эти заголовки
+        expose_headers = ["Authorization"]  # <— если нужно читать заголовок ответа
+                          )
 
     # Настройка конфигурации из .env или config.py
     app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI') or app.config.get('SQLALCHEMY_DATABASE_URI')
