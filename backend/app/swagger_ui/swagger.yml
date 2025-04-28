@@ -11,6 +11,12 @@ tags:
     description: Операции для работы с Sensor_type
   - name: Equipment
     description: Операции для работы с Equipment
+  - name: Parameter
+    description: Операции для работы с Parameter
+  - name: Sensor_parameter
+    description: Операции для работы с Sensor_parameter
+  - name: Sensor_Record
+    description: Операции для работы с Sensor_Record
 servers:
   - url: http://127.0.0.1:5000/
 paths:
@@ -484,6 +490,305 @@ paths:
                 type: string
       security:
         - BearerAuth: [ ]
+
+  /api/parameter/:
+    get:
+      summary: Получите всех Parameter
+      tags:
+        - Parameter
+      responses:
+        '200':
+          description: Список Parameter
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Parameter'
+      security:
+        - BearerAuth: [ ]
+  /api/parameter/add:
+    post:
+      summary: Добавить Parameter
+      tags:
+        - Parameter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+                unit:
+                  type: string
+                  description: unit
+              required:
+                - name
+                - unit
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+  /api/parameter/{id}:
+    delete:
+      summary: Удалить Parameter
+      tags:
+        - Parameter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Parameter
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Parameter
+      tags:
+        - Parameter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Parameter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  description: name
+                unit:
+                  type: string
+                  description: unit
+              required:
+                - name
+                - unit
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+
+  /api/sensors_parameters/:
+    get:
+      summary: Получите всех Sensor_parameter
+      tags:
+        - Sensor_parameter
+      responses:
+        '200':
+          description: Список Sensor_parameter
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor_parameter'
+      security:
+        - BearerAuth: [ ]
+  /api/sensors_parameters/add:
+    post:
+      summary: Добавить Sensor_parameter
+      tags:
+        - Sensor_parameter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sensor_id:
+                  type: integer
+                  description: Id sensor
+                parameter_id:
+                  type: integer
+                  description: Id sensor
+                key:
+                  type: string
+                  description: Название ключа параметра в json файле
+              required:
+                - sensor_id
+                - parameter_id
+                - key
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+  /api/sensors_parameters/{id}:
+    delete:
+      summary: Удалить Sensor_parameter
+      tags:
+        - Sensor_parameter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor_parameter
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Sensor_parameter
+      tags:
+        - Sensor_parameter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor_parameter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sensor_id:
+                  type: integer
+                  description: Id sensor
+                parameter_id:
+                  type: integer
+                  description: Id sensor
+                key:
+                  type: string
+                  description: Название ключа параметра в json файле
+              required:
+                - sensor_id
+                - parameter_id
+                - key
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+
+  /api/sensor_records/:
+    get:
+      summary: Получите всех Sensor_records
+      tags:
+        - Sensor_Record
+      responses:
+        '200':
+          description: Список Sensor_records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor_Record'
+      security:
+        - BearerAuth: [ ]
+  /api/sensor_records/{id}:
+    get:
+      summary: Sensor_Record для одного датчика
+      tags:
+        - Sensor_Record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor_Record
+      responses:
+        '200':
+          description: Список Sensor_records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor_Record'
+      security:
+        - BearerAuth: [ ]
+  /api/sensor_records/raw_data/{id}:
+    get:
+      summary: Sensor_Record для одного датчика
+      tags:
+        - Sensor_Record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor_Record
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Начальная дата в формате YYYY-MM-DD
+          required: false
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Конечная дата в формате YYYY-MM-DD
+          required: false
+        - name: parameter
+          in: query
+          schema:
+            type: integer
+          required: false
+      responses:
+        '200':
+          description: Список Sensor_records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor_Record'
+      security:
+        - BearerAuth: [ ]
+
 components:
   schemas:
     Role:
@@ -545,6 +850,54 @@ components:
         name:
           type: string
           description: Название
+    Parameter:
+      type: object
+      description: Parameter
+      properties:
+        id:
+          description: Id Parameter
+          type: integer
+        name:
+          type: string
+          description: Название
+        unit:
+          type: string
+          description: Еденицы измерения
+    Sensor_parameter:
+      type: object
+      description: Sensor_parameter
+      properties:
+        id:
+          description: Id Sensor_parameter
+          type: integer
+        sensor_id:
+          type: integer
+          description: Id sensor
+        parameter_id:
+          type: integer
+          description: Id sensor
+        key:
+          type: string
+          description: Название ключа параметра в json файле
+    Sensor_Record:
+      type: object
+      description: Sensor_Record
+      properties:
+        id:
+          description: Id Sensor_Record
+          type: integer
+        sensor_id:
+          type: integer
+          description: Id sensor
+        parameter_id:
+          type: integer
+          description: Id sensor
+        timestamp:
+          type: integer
+          description: Время
+        value:
+          type: integer
+          description: Значение
   securitySchemes:
     BearerAuth:
       type: http

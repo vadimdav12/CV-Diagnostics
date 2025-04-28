@@ -32,9 +32,9 @@ def add_sensor():
 
 
 # Изменение sensor_type
-@sensor_type_bp.route('/<sensor_id>', methods=['PUT'])
-def update_sensor(sensor_id):
-    sensor_type = Sensor_type.query.get_or_404(sensor_id)
+@sensor_type_bp.route('/<sensor_type_id>', methods=['PUT'])
+def update_sensor(sensor_type_id):
+    sensor_type = Sensor_type.query.get_or_404(sensor_type_id)
     data = request.get_json()
 
     if not data:
@@ -53,6 +53,10 @@ def update_sensor(sensor_id):
 @sensor_type_bp.route('/<sensor_type_id>', methods=['DELETE'])
 def delete_sensor(sensor_type_id):
     sensor_type = Sensor_type.query.get_or_404(sensor_type_id)
+
+    if sensor_type.sensors:
+        return jsonify({"error": "Cannot delete sensor_type: it is referenced by one or more sensors"}), 400
+
     db.session.delete(sensor_type)
     db.session.commit()
     return jsonify({'message': 'Sensor_type deleted successfully'}), 200
