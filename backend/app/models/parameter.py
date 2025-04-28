@@ -8,5 +8,12 @@ class Parameter(db.Model):
     name = db.Column(db.String(30))
     unit = db.Column(db.String(30))
     # использовать отношения, чтобы связать объекты без явного указания ID
-    sensor_parameter = db.relationship("Sensor_parameter", backref="parameter")
-    parameter_record = db.relationship("Sensor_Record", backref="parameter")
+    sensor_parameter = db.relationship("Sensor_parameter", backref="parameter", passive_deletes='RESTRICT')
+    parameter_record = db.relationship("Sensor_Record", backref="parameter", passive_deletes='RESTRICT')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'unit': self.unit
+    }

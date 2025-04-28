@@ -7,6 +7,7 @@ class Equipment(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(30))
 
+    sensors = db.relationship("Sensor", backref="equipment", passive_deletes='RESTRICT')
     def to_dict(self):
         return {
             'id': self.id,
