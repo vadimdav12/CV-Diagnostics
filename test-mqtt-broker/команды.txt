@@ -1,0 +1,2 @@
+запуск mqtt
+mosquitto -v
