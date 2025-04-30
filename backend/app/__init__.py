@@ -13,10 +13,12 @@ from werkzeug.security import generate_password_hash
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_sqlalchemy import SQLAlchemy
 from flask_mqtt import Mqtt
+from flask_caching import Cache
 
 # Инициализация расширений
 db = SQLAlchemy()
 mqtt = Mqtt()
+cache = Cache()
 user_datastore = None
 
 def create_app():
@@ -40,56 +42,20 @@ def create_app():
     app.config['SECURITY_PASSWORD_SALT'] = os.getenv('SECURITY_PASSWORD_SALT')
     app.config['SECURITY_JOIN_USER_ROLES'] = os.getenv('SECURITY_JOIN_USER_ROLES', 'False') == 'True'
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
-    app.config['JWT_IDENTITY_CLAIM'] = 'sub'
+    app.config['JWT_IDENTITY_CLAIM'] = os.getenv('JWT_IDENTITY_CLAIM')
     # Конфигурация MQTT
-    app.config['MQTT_BROKER_URL'] = 'localhost'
-    app.config['MQTT_BROKER_PORT'] = 1883
+    app.config['MQTT_BROKER_URL'] = os.getenv('MQTT_BROKER_URL')
+    app.config['MQTT_BROKER_PORT'] = int(os.getenv('MQTT_BROKER_PORT'))
+    # Минимальная конфигурация кэша (используем простой встроенный кэш)
+    app.config["CACHE_TYPE"] =  os.getenv('CACHE_TYPE')
 
     def init_mqtt():
         # Привязываем MQTT к приложению
         mqtt.init_app(app)
-
-    init_mqtt()
-
-    @mqtt.on_connect()
-    def handle_connect(client, userdata, flags, rc):
-        print("Connected to MQTT broker")
-
-    @mqtt.on_message()
-    def handle_message(client, userdata, message):
-        from app.models.sensor_parameter import Sensor_parameter
-        from app.models.sensor import Sensor
-        from app.models.sensor_record import Sensor_Record
-
-        data = dict(
-            topic=message.topic,
-            payload=message.payload.decode())
-
-        with app.app_context():
-            try:
-                sensor = Sensor.query.filter_by(data_source=data['topic']).first()
-                query = Sensor_parameter.query.filter(Sensor_parameter.sensor_id == sensor.id)
-
-                data_keys = query.with_entities(Sensor_parameter.key, Sensor_parameter.parameter_id).distinct().all()
-
-                payload = json.loads(data['payload'])
-                # Пакетное добавление записей
-                records = []
-                for key in data_keys:
-                    date_time = datetime.strptime(payload['device']['timestamp'], '%Y-%m-%d-%H:%M:%S')
-                    records.append(Sensor_Record(sensor_id=sensor.id,timestamp=date_time,
-                                      value=payload['telemetry'][key.key], parameter_id=key.parameter_id))
-
-                db.session.bulk_save_objects(records)
-                db.session.commit()
-                app.logger.info(f"Saved {len(records)} records for topic {data['topic']}")
-                app.logger.info(f"Data saved for topic {data['topic']}")
-            except Exception as e:
-                db.session.rollback()
-                app.logger.error(f"Database error: {str(e)}")
-
     # Инициализация расширений
     db.init_app(app)
+    cache.init_app(app)
+    init_mqtt()
     jwt = JWTManager(app)
 
     # Swagger статические файлы
@@ -143,6 +109,10 @@ def create_app():
     # Регистрация всех маршрутов
     from app.routes import register_routes
     register_routes(app)
+
+    from app.services import mqtt_service
+    # Передаем app в mqtt_service
+    mqtt_service.init_app(app)
 
     return app
 
