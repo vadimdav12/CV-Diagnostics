@@ -15,7 +15,6 @@ class Sensor(db.Model):
     sensor_parameter = db.relationship("Sensor_parameter", backref="sensor",cascade='all, delete-orphan')
     sensor_record = db.relationship("Sensor_Record", backref="sensor",cascade='all, delete-orphan')
 
-
     def to_dict(self):
         return {
             'id': self.id,

@@ -1,6 +1,5 @@
 # Игнорируем зависимости
 node_modules/
-.env
 instance/
 __pycache__/
 *.pyc
