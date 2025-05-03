@@ -1,0 +1,149 @@
+.configurator {
+  font-family: sans-serif;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  background: #f4f4f4;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #ccc;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+}
+
+.sidebar {
+  width: 250px;
+  padding: 1rem;
+  background: #fafafa;
+  border-right: 1px solid #ddd;
+  overflow-y: auto;
+}
+
+.block {
+  padding: 8px 12px;
+  margin: 6px 0;
+  background: #e0f7fa;
+  border: 1px solid #00acc1;
+  border-radius: 4px;
+  cursor: grab;
+  transition: background 0.2s;
+}
+
+.block:hover {
+  background: #b2ebf2;
+}
+
+.canvas {
+  position: relative; /* важно для абсолютного позиционирования блоков и стрелок */
+  flex: 1;
+  padding: 1rem;
+  background: #fff;
+  border-left: 1px dashed #ccc;
+  min-height: 400px;
+  overflow: hidden;
+}
+
+.canvas-block {
+  position: absolute;
+  width: 140px;
+  height: 50px;
+  background-color: #f0f0f0;
+  border: 1px solid #999;
+  border-radius: 4px;
+  padding: 5px;
+  cursor: grab;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  z-index: 2;
+}
+
+.canvas-block .output-dot,
+.canvas-block .input-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  z-index: 3;
+}
+
+.output-dot {
+  background-color: black;
+  right: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.input-dot {
+  background-color: green;
+  left: -5px;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+
+.connections {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.apply-button,
+.home-button {
+  padding: 8px 16px;
+  margin: 1rem;
+  background: #00acc1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.apply-button:hover,
+.home-button:hover {
+  background: #007c91;
+}
+
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.header-buttons button {
+  padding: 8px 16px;
+  font-size: 14px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.header-buttons button:hover {
+  background-color: #0056b3;
+}
