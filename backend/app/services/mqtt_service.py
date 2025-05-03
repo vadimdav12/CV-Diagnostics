@@ -17,6 +17,7 @@ app = None  # Глобальная переменная
 def init_app(flask_app):
     global app
     app = flask_app
+    connect_to_topics()
 
 class MQTT_Buffer:
     def __init__(self):
@@ -111,3 +112,14 @@ def get_sensor_and_params(topic):
 
     cache.set(cache_key, {"sensor_id": sensor.id, "data_keys": data_keys}, timeout=3600)
     return sensor.id, data_keys
+
+def connect_to_topics():
+    from app.models.sensor import Sensor
+
+    with app.app_context():
+        # Базовый запрос
+        query = Sensor.query
+        data_sources = [result.data_source for result in query.with_entities(Sensor.data_source).distinct().all()]
+        print(data_sources)
+        for source in data_sources:
+            mqtt.subscribe(source)

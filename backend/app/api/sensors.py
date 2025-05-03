@@ -2,11 +2,13 @@ from datetime import timedelta
 
 from flask import jsonify, make_response, request, abort, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import event
 
 sensors_bp = Blueprint('sensors', __name__)
 
 from ..models.sensor import Sensor
-from app import db
+from app import db, cache, mqtt
+
 
 @sensors_bp.route('/')
 #@jwt_required()
@@ -31,6 +33,7 @@ def add_sensor():
                         equipment_id=data['equipment_id'])
     db.session.add(new_sensor)
     db.session.commit()
+    mqtt.subscribe(new_sensor.data_source)
     return jsonify(new_sensor.to_dict()), 201
 
 
@@ -47,11 +50,17 @@ def update_sensor(sensor_id):
         if data['name'] != sensor.name and Sensor.query.filter_by(name=data['name']).first():
             return jsonify({'error': 'name already exists'}), 400
         sensor.name = data['name']
-    sensor.data_source = data['data_source']
+
+    data_source = sensor.data_source
+    if data_source != data['data_source']:
+        sensor.data_source = data['data_source']
+
     sensor.sensor_type_id = data['sensor_type_id']
     sensor.equipment_id = data['equipment_id']
 
     db.session.commit()
+    mqtt.unsubscribe(data_source)
+    mqtt.subscribe(sensor.data_source)
     return jsonify(sensor.to_dict()), 200
 
 
@@ -59,6 +68,10 @@ def update_sensor(sensor_id):
 @sensors_bp.route('/<sensor_id>', methods=['DELETE'])
 def delete_sensor(sensor_id):
     sensor = Sensor.query.get_or_404(sensor_id)
+    data_source = sensor.data_source
     db.session.delete(sensor)
     db.session.commit()
+
+    mqtt.unsubscribe(data_source)
     return jsonify({'message': 'Sensor deleted successfully'}), 200
+
