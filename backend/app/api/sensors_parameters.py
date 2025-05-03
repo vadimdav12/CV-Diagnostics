@@ -1,10 +1,13 @@
 from flask import jsonify, make_response, request, abort, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from sqlalchemy import event
 
 sensors_parameters_bp = Blueprint('sensors_parameters', __name__)
 
 from ..models.sensor_parameter import Sensor_parameter
-from app import db
+from ..models.sensor import Sensor
+from app import db, cache
+
 
 @sensors_parameters_bp.route('/')
 #@jwt_required()
@@ -25,6 +28,7 @@ def add_sensor():
     new_sensors_parameter = Sensor_parameter(key=data['key'], sensor_id=data['sensor_id'],parameter_id=data['parameter_id'])
     db.session.add(new_sensors_parameter)
     db.session.commit()
+
     return jsonify(new_sensors_parameter.to_dict()), 201
 
 
@@ -54,3 +58,17 @@ def delete_sensor(sensors_parameters_id):
     db.session.delete(sensors_parameters)
     db.session.commit()
     return jsonify({'message': 'Sensor_parameter deleted successfully'}), 200
+
+# Функция для сброса кэша при изменениях Sensor_parameter
+def clear_sensor_cache(mapper, connection, target):
+    sensor = db.session.get(Sensor, target.sensor_id)
+    if sensor:
+        # Очищаем кэш для этого сенсора
+        cache_key = f"sensor_params_{sensor.data_source}"
+        cache.delete(cache_key)
+        print(f"🗑Cleared cache for {cache_key}")
+
+# Регистрируем обработчики для всех значимых событий
+event.listen(Sensor_parameter, 'after_insert', clear_sensor_cache)
+event.listen(Sensor_parameter, 'after_update', clear_sensor_cache)
+event.listen(Sensor_parameter, 'after_delete', clear_sensor_cache)

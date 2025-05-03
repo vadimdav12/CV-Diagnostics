@@ -15,6 +15,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mqtt import Mqtt
 from flask_caching import Cache
 
+from app.services.init_test_data import create_roles_and_users, create_sensors_and_equipment, insert_bulk_data
+
 # Инициализация расширений
 db = SQLAlchemy()
 mqtt = Mqtt()
@@ -49,13 +51,10 @@ def create_app():
     # Минимальная конфигурация кэша (используем простой встроенный кэш)
     app.config["CACHE_TYPE"] =  os.getenv('CACHE_TYPE')
 
-    def init_mqtt():
-        # Привязываем MQTT к приложению
-        mqtt.init_app(app)
     # Инициализация расширений
     db.init_app(app)
     cache.init_app(app)
-    init_mqtt()
+    mqtt.init_app(app) # Привязываем MQTT
     jwt = JWTManager(app)
 
     # Swagger статические файлы
@@ -73,27 +72,6 @@ def create_app():
     from app.models.users import Role, User
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
-    # Функция создания начальных данных
-    def create_roles_and_users():
-        user_datastore.create_role(id=1, name='admin', description="Admin")
-        user_datastore.create_role(id=3, name='user', description="User")
-
-        user_datastore.create_user(username='admin', email='1@mail.ru', password_hash=generate_password_hash('admin'))
-        user_datastore.create_user(username='manager', email='2@mail.ru', password_hash=generate_password_hash('manager'))
-        user_datastore.create_user(username='user', email='3@mail.ru', password_hash=generate_password_hash('user'))
-        db.session.commit()
-
-        admin = user_datastore.find_user(username='admin')
-        user_role = user_datastore.find_role('user')
-
-        user_datastore.add_role_to_user(admin, user_datastore.find_role('admin'))
-        user_datastore.add_role_to_user(user_datastore.find_user(username='manager'), user_role)
-        user_datastore.add_role_to_user(user_datastore.find_user(username='user'), user_role)
-        db.session.commit()
-
-        print("Roles and Users created successfully!")
-
-    # Создание базы и первичных данных
     with app.app_context():
         db.drop_all()
         db.create_all()
@@ -101,10 +79,10 @@ def create_app():
         Role.query.delete()
         User.query.delete()
         db.session.commit()
+        # создание начальных данных
         create_roles_and_users()
         create_sensors_and_equipment()
-        connect_to_topics()
-        insert_bulk_data()
+        insert_bulk_data(50)
 
     # Регистрация всех маршрутов
     from app.routes import register_routes
@@ -115,90 +93,3 @@ def create_app():
     mqtt_service.init_app(app)
 
     return app
-
-def create_sensors_and_equipment():
-    from app.models.sensor_type import Sensor_type
-    from app.models.parameter import Parameter
-    from app.models.sensor import Sensor
-    from app.models.sensor_parameter import Sensor_parameter
-    from app.models.sensor_record import Sensor_Record
-    from app.models.equipment import Equipment
-
-    # Очистка и пересоздание таблиц
-    db.drop_all()
-    db.create_all()
-
-    # Очистка данных
-    Sensor.query.delete()
-    Sensor_Record.query.delete()
-    Sensor_parameter.query.delete()
-    Sensor_type.query.delete()
-    Parameter.query.delete()
-    Equipment.query.delete()
-    db.session.commit()
-
-    # Добавление тестовых данных
-    types = ["тепловой", "вибрационный", "токовый"]
-    for i in types:
-        new_type = Sensor_type(name=i)
-        db.session.add(new_type)
-
-    n_q = Equipment(name="RS344")
-    db.session.add(n_q)
-    parameters = [["Пусковой ток", "Напряжение", "Гармонические искажения тока"],
-                  ["СКЗ ускорения", "Смещение", "Доминирующая частота"],
-                  ["Текущая температура", "Скорость изменения", "Средняя температура за период"]]
-    units = [["A", "B", "%"], ["mm/s", "мкм", "Hz"], ["°C", "°C/сек", "°C"]]
-    for p in range(len(parameters)):
-        for i in range(len(parameters[p])):
-            n_p = Parameter(name=parameters[p][i], unit=units[p][i])
-            db.session.add(n_p)
-    db.session.commit()
-    sensor_types = [1, 2, 3]
-    for i in sensor_types:
-        name = f"D{i}"
-        n_s = Sensor(name=name, data_source=f"sensor/{i}", sensor_type_id=i, equipment=n_q)
-        db.session.add(n_s)
-    db.session.commit()
-    sensor_ids = [1, 2, 3]
-    keys = ["inrush_current", "voltage_rms", "thd_current", "acceleration_rms", "displacement_rms", "dominant_frequency"
-        , "temperature_current", "temperature_rate_change", "temperature_average"]
-    for i in sensor_ids:
-        s_p = Sensor_parameter(sensor_id=i, parameter_id=i, key=f"{keys[(i - 1) * 3]}")
-        db.session.add(s_p)
-    db.session.commit()
-
-    print("Sensors and Equipment created successfully!")
-
-def insert_bulk_data():
-    from app.models.parameter import Parameter
-    from app.models.sensor import Sensor
-    from app.models.sensor_record import Sensor_Record
-
-    sensor_ids = [1, 2, 3]            # ID датчиков
-    parameter_ids = [1, 2, 3]               # ID параметров (например: температура, влажность, давление)
-    print(datetime.now(timezone.utc))
-    batch = []
-    for _ in range(50):
-        data = Sensor_Record(
-            timestamp=datetime.now(timezone.utc),
-            value=round(random.uniform(0, 100), 2),
-            sensor_id=random.choice(sensor_ids),
-            parameter_id=random.choice(parameter_ids))
-        batch.append(data)
-
-    # Вставляем весь список сразу одной транзакцией
-    db.session.bulk_save_objects(batch)
-    db.session.commit()
-
-    print("Inserted 5000 rows in bulk!")
-
-def connect_to_topics():
-    from app.models.sensor import Sensor
-
-    # Базовый запрос
-    query = Sensor.query
-    data_sources = [result.data_source for result in query.with_entities(Sensor.data_source).distinct().all()]
-    print(data_sources)
-    for source in data_sources:
-        mqtt.subscribe(source)

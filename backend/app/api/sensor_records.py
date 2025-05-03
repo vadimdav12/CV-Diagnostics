@@ -24,6 +24,9 @@ def show_all_sensor_records():
 def show_sensor_records(sensor_id):
     sensor_record = Sensor_Record.query.filter_by(sensor_id=sensor_id).first()
 
+    if not sensor_record:
+        return jsonify({'error': 'Sensor doesn\'t  exist'}), 400
+
     query = Sensor_Record.query
     parameter_ids = [result.parameter_id for result in query.with_entities(Sensor_Record.parameter_id).distinct().all()]
     params_values = []
@@ -69,8 +72,6 @@ def show_sensor_records_raw_data(sensor_id):
         query = query.filter(Sensor_Record.parameter_id == parameter)
 
     # Выполняем запрос
-    results = query.order_by(Sensor_Record.timestamp.asc()).all()
-
     values = [result.value for result in query.with_entities(Sensor_Record.value).all()]
 
     return jsonify(values)
