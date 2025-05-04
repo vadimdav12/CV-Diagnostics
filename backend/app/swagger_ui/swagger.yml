@@ -17,6 +17,8 @@ tags:
     description: Операции для работы с Sensor_parameter
   - name: Sensor_Record
     description: Операции для работы с Sensor_Record
+  - name: Configuration
+    description: Операции для работы с Configuration
 servers:
   - url: http://127.0.0.1:5000/
 paths:
@@ -789,6 +791,103 @@ paths:
       security:
         - BearerAuth: [ ]
 
+  /api/configuration/:
+    get:
+      summary: Получите всех Sensor_records
+      tags:
+        - Sensor_Record
+      responses:
+        '200':
+          description: Список Sensor_records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor_Record'
+      security:
+        - BearerAuth: [ ]
+  /api/configuration/{id}:
+    get:
+      summary: Получить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+      responses:
+        '200':
+          description: Configuration для одного пользователя
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    delete:
+      summary: Удалить Configuration
+      tags:
+        - Configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    post:
+      summary: Добавить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+      responses:
+        '200':
+          description: Configuration для одного пользователя
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+      responses:
+        '200':
+          description: Configuration для одного пользователя
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
 components:
   schemas:
     Role:
