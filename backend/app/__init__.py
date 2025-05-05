@@ -15,7 +15,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_mqtt import Mqtt
 from flask_caching import Cache
 
-from app.services.init_test_data import create_roles_and_users, create_sensors_and_equipment, insert_bulk_data
+from app.services.init_test_data import create_roles_and_users, create_sensors_and_equipment, insert_bulk_data, \
+    create_tables
 
 # Инициализация расширений
 db = SQLAlchemy()
@@ -45,7 +46,6 @@ def create_app():
     app.config['SECURITY_JOIN_USER_ROLES'] = os.getenv('SECURITY_JOIN_USER_ROLES', 'False') == 'True'
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY')
     app.config['JWT_IDENTITY_CLAIM'] = os.getenv('JWT_IDENTITY_CLAIM')
-    # Конфигурация MQTT
     app.config['MQTT_BROKER_URL'] = os.getenv('MQTT_BROKER_URL')
     app.config['MQTT_BROKER_PORT'] = int(os.getenv('MQTT_BROKER_PORT'))
     # Минимальная конфигурация кэша (используем простой встроенный кэш)
@@ -54,7 +54,7 @@ def create_app():
     # Инициализация расширений
     db.init_app(app)
     cache.init_app(app)
-    mqtt.init_app(app) # Привязываем MQTT
+    mqtt.init_app(app)
     jwt = JWTManager(app)
 
     # Swagger статические файлы
@@ -73,12 +73,10 @@ def create_app():
     user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 
     with app.app_context():
-        db.drop_all()
-        db.create_all()
+
         # удаление данных таблиц
-        Role.query.delete()
-        User.query.delete()
-        db.session.commit()
+        create_tables()
+
         # создание начальных данных
         create_roles_and_users()
         create_sensors_and_equipment()
