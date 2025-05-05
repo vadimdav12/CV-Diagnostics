@@ -807,18 +807,24 @@ paths:
                   $ref: '#/components/schemas/Sensor_Record'
       security:
         - BearerAuth: [ ]
-  /api/configuration/{id}:
+  /api/configuration/{user_id}/{equipment_id}:
     get:
       summary: Получить Configuration для одного пользователя
       tags:
         - Configuration
       parameters:
-        - name: id
+        - name: user_id
           in: path
           required: true
           schema:
             type: integer
           description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
       responses:
         '200':
           description: Configuration для одного пользователя
@@ -833,12 +839,18 @@ paths:
       tags:
         - Configuration
       parameters:
-        - name: id
+        - name: user_id
           in: path
           required: true
           schema:
             type: integer
           description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
       responses:
         '200':
           description: Результат
@@ -853,12 +865,30 @@ paths:
       tags:
         - Configuration
       parameters:
-        - name: id
+        - name: user_id
           in: path
           required: true
           schema:
             type: integer
           description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: string
+                  description: json config
+              required:
+                - config
       responses:
         '200':
           description: Configuration для одного пользователя
@@ -873,12 +903,30 @@ paths:
       tags:
         - Configuration
       parameters:
-        - name: id
+        - name: user_id
           in: path
           required: true
           schema:
             type: integer
           description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: string
+                  description: json config
+              required:
+                - config
       responses:
         '200':
           description: Configuration для одного пользователя
@@ -997,6 +1045,19 @@ components:
         value:
           type: integer
           description: Значение
+    Configuration:
+      type: object
+      description: Json Configuration
+      properties:
+        user_id:
+          description: Id Sensor_Record
+          type: integer
+        equipment_id:
+          description: Id equipment
+          type: integer
+        config:
+          description: Json Configuration
+          type: string
   securitySchemes:
     BearerAuth:
       type: http

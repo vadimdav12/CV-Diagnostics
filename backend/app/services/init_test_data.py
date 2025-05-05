@@ -113,6 +113,7 @@ def create_tables():
     from app.models.sensor_parameter import Sensor_parameter
     from app.models.sensor_record import Sensor_Record
     from app.models.equipment import Equipment
+    from app.models.configuration import Configuration
 
     # Очистка и пересоздание таблиц
     db.drop_all()
@@ -127,4 +128,5 @@ def create_tables():
     Sensor_type.query.delete()
     Parameter.query.delete()
     Equipment.query.delete()
+    Configuration.query.delete()
     db.session.commit()
