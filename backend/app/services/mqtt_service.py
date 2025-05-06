@@ -78,11 +78,25 @@ def handle_message(client, userdata, message):
             # Формируем записи для буфера
             records = []
             timestamp = datetime.strptime(payload['device']['timestamp'], '%Y-%m-%d-%H:%M:%S')
+
             for key in data_keys:
+                keys = key.key.split('.')
+                value = payload
+                key_is_valid = True
+                for nested_key in keys:
+                    if isinstance(value, dict) and nested_key in value:
+                        value = value[nested_key]
+                    else:
+                        key_is_valid = False
+                        break
+                if not key_is_valid:
+                    print(f"Invalid key: {key.key}")
+                    continue
+
                 records.append(Sensor_Record(
                     sensor_id=sensor_id,
                     parameter_id=key.parameter_id,
-                    value=payload['telemetry'][key.key],
+                    value=value,
                     timestamp=timestamp
                 ))
 
