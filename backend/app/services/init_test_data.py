@@ -49,8 +49,8 @@ def create_sensors_and_equipment():
         db.session.add(n_s)
     db.session.commit()
     sensor_ids = [1, 2, 3]
-    keys = ["inrush_current", "voltage_rms", "thd_current", "acceleration_rms", "displacement_rms", "dominant_frequency"
-        , "temperature_current", "temperature_rate_change", "temperature_average"]
+    keys = ["telemetry.inrush_current", "telemetry.voltage_rms", "telemetry.thd_current", "telemetry.acceleration_rms", "telemetry.displacement_rms", "telemetry.dominant_frequency"
+        , "telemetry.temperature_current", "telemetry.temperature_rate_change", "telemetry.temperature_average"]
     for i in sensor_ids:
         s_p = Sensor_parameter(sensor_id=i, parameter_id=i, key=f"{keys[(i - 1) * 3]}")
         db.session.add(s_p)
