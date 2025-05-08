@@ -32,7 +32,7 @@ def show_sensor_records(sensor_id):
     params_values = []
     for id in parameter_ids:
         values = [result.value for result in
-                  query.filter(Sensor_Record.parameter_id == id).with_entities(Sensor_Record.value).all()]
+                  query.filter(Sensor_Record.parameter_id == id, Sensor_Record.sensor_id == sensor_id).with_entities(Sensor_Record.value).all()]
         params_values.append({'parameter_id': id, 'values': values})
 
     result = jsonify({'sensor_id': sensor_record.sensor.name, 'values': params_values})
@@ -50,7 +50,7 @@ def show_sensor_records_raw_data(sensor_id):
     parameter = request.args.get('parameter')
 
     # Базовый запрос
-    query = Sensor_Record.query
+    query = Sensor_Record.query.filter(Sensor_Record.sensor_id == sensor_id)
     # Фильтрация по дате и времени
     if start_datetime_str:
         try:

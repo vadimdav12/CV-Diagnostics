@@ -791,22 +791,7 @@ paths:
       security:
         - BearerAuth: [ ]
 
-  /api/configuration/:
-    get:
-      summary: Получите всех Sensor_records
-      tags:
-        - Sensor_Record
-      responses:
-        '200':
-          description: Список Sensor_records
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Sensor_Record'
-      security:
-        - BearerAuth: [ ]
+
   /api/configuration/{user_id}/{equipment_id}:
     get:
       summary: Получить Configuration для одного пользователя
@@ -934,6 +919,33 @@ paths:
             application/json:
               schema:
                 type: string
+      security:
+        - BearerAuth: [ ]
+  /api/configuration/{user_id}/{equipment_id}/apply:
+    get:
+      summary: Применить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      responses:
+        '200':
+          description: Список значений Sensor_records
+          content:
+            application/json:
+              schema:
+                type: integer
       security:
         - BearerAuth: [ ]
 components:
