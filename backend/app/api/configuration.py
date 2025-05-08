@@ -4,6 +4,7 @@ from flask_jwt_extended import (
 )
 
 from app import db
+from app.core.block_processor import Block_Processor
 from app.models.configuration import Configuration
 
 configuration_bp = Blueprint('configuration', __name__)
@@ -59,3 +60,13 @@ def delete_configuration(user_id, equipment_id):
     db.session.delete(config)
     db.session.commit()
     return jsonify({'message': 'Configuration deleted successfully'}), 200
+
+@configuration_bp.route('/<user_id>/<equipment_id>/apply', methods=['GET'])
+def apply_configuration(user_id, equipment_id):
+    config = Configuration.query.get((user_id, equipment_id))
+    if not config:
+        return jsonify({'message': 'Нет конфигурация для этого пользователя и оборудования!'}), 404
+
+    result = Block_Processor(config.config).process()
+    #print(result)  # {'chart1': 10}
+    return jsonify({'message': 'Configuration applied successfully', 'result': result}), 200

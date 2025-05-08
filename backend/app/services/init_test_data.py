@@ -1,3 +1,5 @@
+import time
+
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timezone
 import random
@@ -73,6 +75,7 @@ def insert_bulk_data(count):
             value=round(random.uniform(0, 100), 2),
             sensor_id=random.choice(sensor_ids),
             parameter_id=random.choice(parameter_ids))
+        time.sleep(0.1)
         batch.append(data)
 
     # Вставляем весь список сразу одной транзакцией
