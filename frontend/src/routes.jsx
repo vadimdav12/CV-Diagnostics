@@ -11,7 +11,7 @@ import EditEquipment    from './pages/EditEquipment';
 import PrivateRoute     from './components/PrivateRoute';
 import MainLayout       from './components/MainLayout';
 import Configurator from './pages/Configurator';
-
+import VisualizationPage from './pages/VisualizationPage';
 export default function AppRoutes() {
   return (
     <Routes>
@@ -22,6 +22,7 @@ export default function AppRoutes() {
         {/* Доступно всем */}
         <Route path="/" element={<EquipmentList />} />
         <Route path="/configurator" element={<Configurator />} />
+        <Route path="/visualization" element={<VisualizationPage />} />
 
 
         {/* Только admin */}

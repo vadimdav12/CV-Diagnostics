@@ -222,20 +222,9 @@ const Configurator = () => {
    * Обработчик клика по кнопке "Применить изменения"
    * Отправляет текущую конфигурацию на сервер
    */
-  const handleApplyClick = async () => {
-    try {
-      console.log("Отправка конфигурации:", config);
-      // Здесь будет вызов API для сохранения конфигурации
-      // const response = await fetch('/api/save-config', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(config)
-      // });
-      alert(`Конфигурация готова к отправке:\n${JSON.stringify(config, null, 2)}`);
-    } catch (error) {
-      console.error("Ошибка:", error);
-    }
-  };
+ const handleApplyClick = () => {
+   navigate('/visualization', { state: config });
+ };
 
   return (
     <div className="configurator">
