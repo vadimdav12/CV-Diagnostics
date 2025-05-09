@@ -17,6 +17,8 @@ tags:
     description: Операции для работы с Sensor_parameter
   - name: Sensor_Record
     description: Операции для работы с Sensor_Record
+  - name: Configuration
+    description: Операции для работы с Configuration
 servers:
   - url: http://127.0.0.1:5000/
 paths:
@@ -789,6 +791,163 @@ paths:
       security:
         - BearerAuth: [ ]
 
+
+  /api/configuration/{user_id}/{equipment_id}:
+    get:
+      summary: Получить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      responses:
+        '200':
+          description: Configuration для одного пользователя
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    delete:
+      summary: Удалить Configuration
+      tags:
+        - Configuration
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    post:
+      summary: Добавить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: string
+                  description: json config
+              required:
+                - config
+      responses:
+        '200':
+          description: Configuration для одного пользователя
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+    put:
+      summary: Изменить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                config:
+                  type: string
+                  description: json config
+              required:
+                - config
+      responses:
+        '200':
+          description: Configuration для одного пользователя
+          content:
+            application/json:
+              schema:
+                type: string
+      security:
+        - BearerAuth: [ ]
+  /api/configuration/{user_id}/{equipment_id}/apply:
+    get:
+      summary: Применить Configuration для одного пользователя
+      tags:
+        - Configuration
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID User
+        - name: equipment_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID equipment
+      responses:
+        '200':
+          description: Список значений Sensor_records
+          content:
+            application/json:
+              schema:
+                type: integer
+      security:
+        - BearerAuth: [ ]
 components:
   schemas:
     Role:
@@ -898,6 +1057,19 @@ components:
         value:
           type: integer
           description: Значение
+    Configuration:
+      type: object
+      description: Json Configuration
+      properties:
+        user_id:
+          description: Id Sensor_Record
+          type: integer
+        equipment_id:
+          description: Id equipment
+          type: integer
+        config:
+          description: Json Configuration
+          type: string
   securitySchemes:
     BearerAuth:
       type: http

@@ -20,7 +20,8 @@ class User(db.Model, UserMixin):
     fs_uniquifier = db.Column(db.String(255), unique=True)
     # backreferences the user_id from roles_users table
     roles = db.relationship('Role', secondary=roles_users, backref='roles')
-
+    # использовать отношения, чтобы связать объекты без явного указания ID
+    config = db.relationship("Configuration", backref="user", cascade='all, delete-orphan')
     def to_dict(self):
         return {
             'id': self.id,

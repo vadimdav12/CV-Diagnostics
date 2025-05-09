@@ -8,6 +8,7 @@ class Equipment(db.Model):
     name = db.Column(db.String(30))
 
     sensors = db.relationship("Sensor", backref="equipment", passive_deletes='RESTRICT')
+    config = db.relationship("Configuration", backref="equipment", cascade='all, delete-orphan')
     def to_dict(self):
         return {
             'id': self.id,

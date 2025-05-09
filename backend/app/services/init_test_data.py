@@ -1,3 +1,5 @@
+import time
+
 from werkzeug.security import generate_password_hash
 from datetime import datetime, timezone
 import random
@@ -5,7 +7,7 @@ import random
 # Функция создания начальных данных для датчиков, параметров, оборудования и связи
 #  датчиков и параметров
 def create_sensors_and_equipment():
-    from app import db, user_datastore
+    from app import db
     from app.models.sensor_type import Sensor_type
     from app.models.parameter import Parameter
     from app.models.sensor import Sensor
@@ -14,7 +16,6 @@ def create_sensors_and_equipment():
     from app.models.equipment import Equipment
 
     # Очистка и пересоздание таблиц
-    db.drop_all()
     db.create_all()
 
     # Очистка данных
@@ -50,8 +51,8 @@ def create_sensors_and_equipment():
         db.session.add(n_s)
     db.session.commit()
     sensor_ids = [1, 2, 3]
-    keys = ["inrush_current", "voltage_rms", "thd_current", "acceleration_rms", "displacement_rms", "dominant_frequency"
-        , "temperature_current", "temperature_rate_change", "temperature_average"]
+    keys = ["telemetry.inrush_current", "telemetry.voltage_rms", "telemetry.thd_current", "telemetry.acceleration_rms", "telemetry.displacement_rms", "telemetry.dominant_frequency"
+        , "telemetry.temperature_current", "telemetry.temperature_rate_change", "telemetry.temperature_average"]
     for i in sensor_ids:
         s_p = Sensor_parameter(sensor_id=i, parameter_id=i, key=f"{keys[(i - 1) * 3]}")
         db.session.add(s_p)
@@ -61,7 +62,7 @@ def create_sensors_and_equipment():
 
 # Функция создания начальных данных от датчиков
 def insert_bulk_data(count):
-    from app import db, user_datastore
+    from app import db
     from app.models.sensor_record import Sensor_Record
 
     sensor_ids = [1, 2, 3]            # ID датчиков
@@ -74,6 +75,7 @@ def insert_bulk_data(count):
             value=round(random.uniform(0, 100), 2),
             sensor_id=random.choice(sensor_ids),
             parameter_id=random.choice(parameter_ids))
+        time.sleep(0.1)
         batch.append(data)
 
     # Вставляем весь список сразу одной транзакцией
@@ -85,8 +87,9 @@ def insert_bulk_data(count):
 # Функция создания начальных данных для пользователей
 def create_roles_and_users():
     from app import db, user_datastore
+
     user_datastore.create_role(id=1, name='admin', description="Admin")
-    user_datastore.create_role(id=3, name='user', description="User")
+    user_datastore.create_role(id=2, name='user', description="User")
 
     user_datastore.create_user(username='admin', email='1@mail.ru', password_hash=generate_password_hash('admin'))
     user_datastore.create_user(username='manager', email='2@mail.ru', password_hash=generate_password_hash('manager'))
@@ -102,3 +105,31 @@ def create_roles_and_users():
     db.session.commit()
 
     print("Roles and Users created successfully!")
+
+
+def create_tables():
+    from app import db
+    from app.models.users import Role, User
+    from app.models.sensor_type import Sensor_type
+    from app.models.parameter import Parameter
+    from app.models.sensor import Sensor
+    from app.models.sensor_parameter import Sensor_parameter
+    from app.models.sensor_record import Sensor_Record
+    from app.models.equipment import Equipment
+    from app.models.configuration import Configuration
+
+    # Очистка и пересоздание таблиц
+    db.drop_all()
+    db.create_all()
+
+    # Очистка данных
+    Role.query.delete()
+    User.query.delete()
+    Sensor.query.delete()
+    Sensor_Record.query.delete()
+    Sensor_parameter.query.delete()
+    Sensor_type.query.delete()
+    Parameter.query.delete()
+    Equipment.query.delete()
+    Configuration.query.delete()
+    db.session.commit()
