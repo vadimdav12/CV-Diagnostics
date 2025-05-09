@@ -10,6 +10,7 @@ import AddEquipment     from './pages/AddEquipment';
 import EditEquipment    from './pages/EditEquipment';
 import PrivateRoute     from './components/PrivateRoute';
 import MainLayout       from './components/MainLayout';
+import Configurator from './pages/Configurator';
 
 export default function AppRoutes() {
   return (
@@ -20,6 +21,8 @@ export default function AppRoutes() {
       <Route element={<PrivateRoute><MainLayout/></PrivateRoute>}>
         {/* Доступно всем */}
         <Route path="/" element={<EquipmentList />} />
+        <Route path="/configurator" element={<Configurator />} />
+
 
         {/* Только admin */}
         <Route path="/users" element={<Users />} />

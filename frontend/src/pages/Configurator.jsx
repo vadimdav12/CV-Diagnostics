@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import DraggableBlock from '../components/DraggableBlock.jsx';
 import '../components/configurator.css';
+import { useNavigate } from 'react-router-dom';
 
 /**
  * Начальные данные для блоков, разделенные по категориям:
@@ -212,8 +213,9 @@ const Configurator = () => {
   /**
    * Обработчик клика по кнопке "Домой"
    */
+  const navigate = useNavigate();
   const handleHomeClick = () => {
-    console.log("Переход на главную");
+    navigate('/'); // путь к EquipmentList
   };
 
   /**

@@ -1,14 +1,12 @@
 import React from 'react';
-// import NavBar from './components/NavBar';
-// import AppRoutes from './routes'; скибиди
-import Configurator from './pages/Configurator';
+import NavBar from './components/NavBar';
+import AppRoutes from './routes';
 
 export default function App() {
   return (
     <>
-      {/* <NavBar /> */}
-      {/* <AppRoutes /> */}
-      <Configurator />
+      <NavBar />
+       <AppRoutes />
     </>
   );
 }
