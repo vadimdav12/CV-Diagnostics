@@ -1,3 +1,4 @@
+/* Основной контейнер приложения */
 .configurator {
   font-family: sans-serif;
   height: 100vh;
@@ -5,6 +6,7 @@
   flex-direction: column;
 }
 
+/* Стили для верхней панели */
 .top-bar {
   background: #f4f4f4;
   padding: 1rem;
@@ -15,11 +17,43 @@
   font-size: 1.2rem;
 }
 
+/* Контейнер содержимого в header */
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Контейнер для кнопок в header */
+.header-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+/* Стили для кнопок в header */
+.header-buttons button {
+  padding: 8px 16px;
+  font-size: 14px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.header-buttons button:hover {
+  background-color: #0056b3;
+}
+
+/* Основная область контента */
 .main {
   flex: 1;
   display: flex;
 }
 
+/* Стили для боковой панели */
 .sidebar {
   width: 250px;
   padding: 1rem;
@@ -28,6 +62,7 @@
   overflow-y: auto;
 }
 
+/* Стили для блоков в боковой панели */
 .block {
   padding: 8px 12px;
   margin: 6px 0;
@@ -42,8 +77,9 @@
   background: #b2ebf2;
 }
 
+/* Стили для рабочей области (холста) */
 .canvas {
-  position: relative; /* важно для абсолютного позиционирования блоков и стрелок */
+  position: relative;
   flex: 1;
   padding: 1rem;
   background: #fff;
@@ -52,58 +88,104 @@
   overflow: hidden;
 }
 
+/* Стили для блоков на холсте */
 .canvas-block {
   position: absolute;
-  width: 140px;
-  height: 50px;
+  width: 160px;         /* Фиксированная ширина блока */
+  min-height: 60px;     /* Минимальная высота блока */
   background-color: #f0f0f0;
   border: 1px solid #999;
-  border-radius: 4px;
-  padding: 5px;
+  border-radius: 6px;
+  padding: 8px;
   cursor: grab;
   user-select: none;
   display: flex;
-  align-items: center;
+  flex-direction: column;
   justify-content: center;
   font-size: 0.9rem;
   z-index: 2;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
+/* Цветовые стили для разных типов блоков */
+.canvas-block.dataSource { 
+  background: #e0f7fa;
+  border-color: #00acc1;
+}
+
+.canvas-block.function { 
+  background: #e8f5e9;
+  border-color: #4caf50;
+}
+
+.canvas-block.chart { 
+  background: #fff3e0;
+  border-color: #ffa000;
+}
+
+/* Заголовок внутри блока */
+.block-header {
+  font-weight: bold;
+  margin-bottom: 4px;
+  text-align: center;
+  word-break: break-word; /* Перенос длинных слов */
+}
+
+/* Дополнительная информация в блоке */
+.block-details {
+  display: block;
+  font-size: 0.8em;
+  color: #666;
+  text-align: center;
+}
+
+/* Общие стили для точек соединения */
 .canvas-block .output-dot,
 .canvas-block .input-dot {
   position: absolute;
-  width: 10px;
-  height: 10px;
+  width: 12px;          /* Диаметр точки */
+  height: 12px;         /* Диаметр точки */
   border-radius: 50%;
   z-index: 3;
+  transition: transform 0.2s;
 }
 
+/* Эффект при наведении на точки */
+.canvas-block .output-dot:hover,
+.canvas-block .input-dot:hover {
+  transform: scale(1.3); /* Увеличение точки */
+}
+
+/* Стили для выходной точки (правая сторона) */
 .output-dot {
-  background-color: black;
-  right: -5px;
-  top: 50%;
+  background-color: #333;
+  right: -6px;          /* Половина ширины точки (12px/2) */
+  top: 50%;             /* Центрирование по вертикали */
   transform: translateY(-50%);
   cursor: pointer;
 }
 
+/* Стили для входной точки (левая сторона) */
 .input-dot {
-  background-color: green;
-  left: -5px;
-  top: 50%;
+  background-color: #4CAF50;
+  left: -6px;           /* Половина ширины точки (12px/2) */
+  top: 50%;             /* Центрирование по вертикали */
   transform: translateY(-50%);
   cursor: pointer;
 }
 
+/* Стили для соединений (стрелок) */
 .connections {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  z-index: 1;
+  pointer-events: none; /* Чтобы клики проходили сквозь SVG */
+  z-index: 1;           /* Под блоками, но над холстом */
 }
 
+/* Стили для кнопок управления */
 .apply-button,
 .home-button {
   padding: 8px 16px;
@@ -119,31 +201,4 @@
 .apply-button:hover,
 .home-button:hover {
   background: #007c91;
-}
-
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.header-buttons button {
-  padding: 8px 16px;
-  font-size: 14px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.header-buttons button:hover {
-  background-color: #0056b3;
 }
