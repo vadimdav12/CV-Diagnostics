@@ -1,3 +1,5 @@
+// src/pages/EquipmentList.jsx
+
 import React, { useEffect, useState } from 'react';
 import {
   Container,
@@ -6,62 +8,36 @@ import {
   Switch,
   Box,
   Grid,
-  TextField,
-  Button
+  TextField
 } from '@mui/material';
 import { fetchEquipments } from '../api';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 export default function EquipmentList() {
   const [equipments, setEquipments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
-
   const navigate = useNavigate();
 
+  // Получаем userId из JWT
+  const token = localStorage.getItem('access_token');
+  const userId = token
+    ? JSON.parse(atob(token.split('.')[1])).sub
+      || JSON.parse(atob(token.split('.')[1])).id
+    : null;
+
   useEffect(() => {
-    loadEquipments();
+    (async () => {
+      try {
+        const res = await fetchEquipments();
+        setEquipments(res.data.map(eq => ({ ...eq, active: true })));
+      } catch (err) {
+        console.error('Ошибка загрузки оборудования', err);
+      }
+    })();
   }, []);
 
-  const loadEquipments = async () => {
-    try {
-      const res = await fetchEquipments();
-      // добавляем поле active по умолчанию true
-      const initial = res.data.map(eq => ({ ...eq, active: true }));
-      setEquipments(initial);
-    } catch (error) {
-      console.error('Ошибка загрузки оборудования', error);
-    }
-  };
-
-  const handleToggle = (id) => {
-    setEquipments(prev =>
-      prev.map(eq =>
-        eq.id === id ? { ...eq, active: !eq.active } : eq
-      )
-    );
-  };
-
-  /**
-  * Собираем конфиг на основе оборудования
-  * (пример создания конфига; подставьте логику вашу)
-  */
- const buildConfigForEquipment = (eq) => {
-   return {
-     version: '1.0',
-     blocks: {
-       // допустим, для каждого оборудования у нас фиксированные цепочки
-       dataSource: { type: 'dataSource', parameters: { sensor_id: eq.id, parameter_id: 1 } },
-       func:       { type: 'function',   parameters: { function: 'fourier' } },
-       chart:      { type: 'chart',      parameters: { chart_type: 'time' } },
-     },
-     connections: [
-       { source: 'dataSource', target: 'func' },
-       { source: 'func',       target: 'chart' }
-     ]
-   };
- };
-  // поиск + сортировка
   const filtered = equipments
     .filter(eq => eq.name.toLowerCase().includes(searchQuery.toLowerCase()))
     .sort((a, b) =>
@@ -76,50 +52,52 @@ export default function EquipmentList() {
         Выбор оборудования
       </Typography>
 
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          mb: 2,
-          px: 1
-        }}
-      >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2, px: 1 }}>
         <TextField
           label="Поиск"
-          variant="outlined"
           size="small"
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
         />
-        <Button onClick={() => setSortAsc(!sortAsc)}>
-          Сортировка: {sortAsc ? 'по возрастанию' : 'по убыванию'}
-        </Button>
+        <Paper
+          component="button"
+          onClick={() => setSortAsc(!sortAsc)}
+          sx={{ p: 1, cursor: 'pointer' }}
+        >
+          Сортировка: {sortAsc ? '↑' : '↓'}
+        </Paper>
       </Box>
 
       <Grid container spacing={2}>
         {filtered.map(eq => (
           <Grid item xs={12} key={eq.id}>
-           <Paper
-             onClick={() => {
-               const cfg = buildConfigForEquipment(eq);
-+              navigate('/visualization', { state: cfg });
-             }}
-             sx={{
-               p: 2,
-               display: 'flex',
-               alignItems: 'center',
-               cursor: 'pointer'     // указатель руки
-             }}
-             >
-              {/* Иконка. Можно заменить src на динамический URL из eq */}
+            <Paper
+              onClick={async () => {
+                try {
+                  // Проверяем, есть ли у пользователя конфиг для этого оборудования
+                  await axios.get(`/api/configuration/${userId}/${eq.id}`);
+                  // Если есть — сразу на страницу визуализации
+                  navigate(`/visualization/${eq.id}`);
+                } catch (err) {
+                  if (err.response?.status === 404) {
+                    // Если нет — идём в конструктор для создания конфига
+                    navigate('/configurator', { state: { equipmentId: eq.id } });
+                  } else {
+                    console.error('Ошибка при проверке конфигурации:', err);
+                  }
+                }
+              }}
+              sx={{
+                p: 2,
+                display: 'flex',
+                alignItems: 'center',
+                cursor: 'pointer'
+              }}
+            >
               <img
                 src="/equipment-icon.png"
                 alt="Иконка оборудования"
-                style={{
-                  width: 60,
-                  height: 60,
-                  marginRight: 16
-                }}
+                style={{ width: 60, height: 60, marginRight: 16 }}
               />
 
               <Box sx={{ flexGrow: 1 }}>
@@ -131,7 +109,15 @@ export default function EquipmentList() {
 
               <Switch
                 checked={eq.active}
-                onChange={() => handleToggle(eq.id)}
+                onChange={() =>
+                  setEquipments(prev =>
+                    prev.map(item =>
+                      item.id === eq.id
+                        ? { ...item, active: !item.active }
+                        : item
+                    )
+                  )
+                }
               />
             </Paper>
           </Grid>

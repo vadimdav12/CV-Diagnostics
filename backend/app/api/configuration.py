@@ -65,8 +65,17 @@ def delete_configuration(user_id, equipment_id):
 def apply_configuration(user_id, equipment_id):
     config = Configuration.query.get((user_id, equipment_id))
     if not config:
-        return jsonify({'message': 'Нет конфигурация для этого пользователя и оборудования!'}), 404
+        return jsonify({'message': 'Нет конфигурации для этого пользователя и оборудования!'}), 404
 
-    result = Block_Processor(config.config).process()
-    #print(result)  # {'chart1': 10}
-    return jsonify({'message': 'Configuration applied successfully', 'result': result}), 200
+    raw_result = Block_Processor(config.config).process()
+    # Преобразуем numpy.ndarray в списки, чтобы JSON-сериализация прошла успешно
+    serializable = {}
+    for block_id, data in raw_result.items():
+        x_vals = data.get('x_values', [])
+        y_vals = data.get('y_values', [])
+        serializable[block_id] = {
+            'x_values': x_vals.tolist() if hasattr(x_vals, 'tolist') else list(x_vals),
+            'y_values': y_vals.tolist() if hasattr(y_vals, 'tolist') else list(y_vals)
+        }
+
+    return jsonify({'message': 'Configuration applied successfully', 'result': serializable}), 200
