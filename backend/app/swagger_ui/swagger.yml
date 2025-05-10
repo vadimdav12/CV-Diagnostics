@@ -597,11 +597,18 @@ paths:
       security:
         - BearerAuth: [ ]
 
-  /api/sensors_parameters/:
+  /api/sensors_parameters/{id}:
     get:
       summary: Получите всех Sensor_parameter
       tags:
         - Sensor_parameter
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Sensor
       responses:
         '200':
           description: Список Sensor_parameter
@@ -613,41 +620,7 @@ paths:
                   $ref: '#/components/schemas/Sensor_parameter'
       security:
         - BearerAuth: [ ]
-  /api/sensors_parameters/add:
-    post:
-      summary: Добавить Sensor_parameter
-      tags:
-        - Sensor_parameter
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                sensor_id:
-                  type: integer
-                  description: Id sensor
-                parameter_id:
-                  type: integer
-                  description: Id sensor
-                key:
-                  type: string
-                  description: Название ключа параметра в json файле
-              required:
-                - sensor_id
-                - parameter_id
-                - key
-      responses:
-        '200':
-          description: Результат
-          content:
-            application/json:
-              schema:
-                type: string
-      security:
-        - BearerAuth: [ ]
-  /api/sensors_parameters/{id}:
+  /api/sensors_parameters/{id}/{parameter_id}:
     delete:
       summary: Удалить Sensor_parameter
       tags:
@@ -658,7 +631,13 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID Sensor_parameter
+          description: ID Sensor
+        - name: parameter_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID parameter
       responses:
         '200':
           description: Результат
@@ -668,8 +647,8 @@ paths:
                 type: string
       security:
         - BearerAuth: [ ]
-    put:
-      summary: Изменить Sensor_parameter
+    post:
+      summary: Добавить Sensor_parameter
       tags:
         - Sensor_parameter
       parameters:
@@ -678,7 +657,13 @@ paths:
           required: true
           schema:
             type: integer
-          description: ID Sensor_parameter
+          description: ID Sensor
+        - name: parameter_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID parameter
       requestBody:
         required: true
         content:
@@ -686,18 +671,10 @@ paths:
             schema:
               type: object
               properties:
-                sensor_id:
-                  type: integer
-                  description: Id sensor
-                parameter_id:
-                  type: integer
-                  description: Id sensor
                 key:
                   type: string
                   description: Название ключа параметра в json файле
               required:
-                - sensor_id
-                - parameter_id
                 - key
       responses:
         '200':

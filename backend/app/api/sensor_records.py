@@ -25,9 +25,9 @@ def show_sensor_records(sensor_id):
     sensor_record = Sensor_Record.query.filter_by(sensor_id=sensor_id).first()
 
     if not sensor_record:
-        return jsonify({'error': 'Sensor doesn\'t  exist'}), 400
+        return jsonify({'error': 'Sensor record doesn\'t  exist'}), 400
 
-    query = Sensor_Record.query
+    query = Sensor_Record.query.filter_by(sensor_id=sensor_id)
     parameter_ids = [result.parameter_id for result in query.with_entities(Sensor_Record.parameter_id).distinct().all()]
     params_values = []
     for id in parameter_ids:
@@ -35,7 +35,7 @@ def show_sensor_records(sensor_id):
                   query.filter(Sensor_Record.parameter_id == id, Sensor_Record.sensor_id == sensor_id).with_entities(Sensor_Record.value).all()]
         params_values.append({'parameter_id': id, 'values': values})
 
-    result = jsonify({'sensor_id': sensor_record.sensor.name, 'values': params_values})
+    result = jsonify({'sensor_id': sensor_id, 'values': params_values})
     return result
     # return jsonify([{'id': sensor_record.id, 'timestamp': sensor_record.timestamp, 'value': sensor_record.value,
     #                  'sensor_id': sensor_record.sensor.name, 'parameter_id': sensor_record.parameter.name} for sensor_record in sensor_records])
