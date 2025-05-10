@@ -10,11 +10,14 @@ import {
   Button
 } from '@mui/material';
 import { fetchEquipments } from '../api';
+import { useNavigate } from 'react-router-dom';
 
 export default function EquipmentList() {
   const [equipments, setEquipments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortAsc, setSortAsc] = useState(true);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadEquipments();
@@ -39,6 +42,25 @@ export default function EquipmentList() {
     );
   };
 
+  /**
+  * Собираем конфиг на основе оборудования
+  * (пример создания конфига; подставьте логику вашу)
+  */
+ const buildConfigForEquipment = (eq) => {
+   return {
+     version: '1.0',
+     blocks: {
+       // допустим, для каждого оборудования у нас фиксированные цепочки
+       dataSource: { type: 'dataSource', parameters: { sensor_id: eq.id, parameter_id: 1 } },
+       func:       { type: 'function',   parameters: { function: 'fourier' } },
+       chart:      { type: 'chart',      parameters: { chart_type: 'time' } },
+     },
+     connections: [
+       { source: 'dataSource', target: 'func' },
+       { source: 'func',       target: 'chart' }
+     ]
+   };
+ };
   // поиск + сортировка
   const filtered = equipments
     .filter(eq => eq.name.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -77,13 +99,18 @@ export default function EquipmentList() {
       <Grid container spacing={2}>
         {filtered.map(eq => (
           <Grid item xs={12} key={eq.id}>
-            <Paper
-              sx={{
-                p: 2,
-                display: 'flex',
-                alignItems: 'center'
-              }}
-            >
+           <Paper
+             onClick={() => {
+               const cfg = buildConfigForEquipment(eq);
++              navigate('/visualization', { state: cfg });
+             }}
+             sx={{
+               p: 2,
+               display: 'flex',
+               alignItems: 'center',
+               cursor: 'pointer'     // указатель руки
+             }}
+             >
               {/* Иконка. Можно заменить src на динамический URL из eq */}
               <img
                 src="/equipment-icon.png"
