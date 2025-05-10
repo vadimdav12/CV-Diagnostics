@@ -15,19 +15,6 @@ def create_sensors_and_equipment():
     from app.models.sensor_record import Sensor_Record
     from app.models.equipment import Equipment
 
-    # Очистка и пересоздание таблиц
-    db.create_all()
-
-    # Очистка данных
-    Sensor.query.delete()
-    Sensor_Record.query.delete()
-    Sensor_parameter.query.delete()
-    Sensor_type.query.delete()
-    Parameter.query.delete()
-    Equipment.query.delete()
-    db.session.commit()
-
-    # Добавление тестовых данных
     types = ["токовый", "тепловой", "вибрационный"]
     for i in types:
         new_type = Sensor_type(name=i)
