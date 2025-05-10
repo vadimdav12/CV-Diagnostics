@@ -15,6 +15,7 @@ import EditEquipment      from './pages/EditEquipment';
 
 import PrivateRoute       from './components/PrivateRoute';
 import MainLayout         from './components/MainLayout';
+import Sensors from './pages/Sensors';
 
 export default function AppRoutes() {
   return (
@@ -23,7 +24,8 @@ export default function AppRoutes() {
 
       {/* Всё защищённое */}
       <Route element={<PrivateRoute><MainLayout /></PrivateRoute>}>
-        <Route index element={<EquipmentList />} />                             {/* / */}
+        <Route index element={<EquipmentList />} />
+          <Route path="sensors" element={<Sensors />} />
         <Route path="configurator" element={<Configurator />} />               {/* /configurator */}
         <Route path="visualization/:equipmentId" element={<VisualizationPage />} /> {/* /visualization/123 */}
 
