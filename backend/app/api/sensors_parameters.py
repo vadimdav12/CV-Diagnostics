@@ -1,74 +1,48 @@
-from flask import jsonify, make_response, request, abort, Blueprint
+# app/api/sensors_parameters.py
+
+from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import event
+from app import db
+from app.models.sensor_parameter import Sensor_parameter
 
-sensors_parameters_bp = Blueprint('sensors_parameters', __name__)
+sensors_parameters_bp = Blueprint('sensors_parameters', __name__, url_prefix='/api/sensors_parameters')
 
-from ..models.sensor_parameter import Sensor_parameter
-from ..models.sensor import Sensor
-from app import db, cache
+# Получить все параметры, назначенные датчику
+@sensors_parameters_bp.route('/<int:sensor_id>', methods=['GET'])
+@jwt_required()
+def get_sensor_parameters(sensor_id):
+    # Опционально: проверить user_id из токена, если параметры привязаны к пользователю
+    params = Sensor_parameter.query.filter_by(sensor_id=sensor_id).all()
+    return jsonify([p.to_dict() for p in params]), 200
 
-
-@sensors_parameters_bp.route('/')
-#@jwt_required()
-def show_sensors_parameters():
-    sensors_parameters = Sensor_parameter.query.all()
-
-    return jsonify([{'id': sensors_parameters.id, 'key': sensors_parameters.key,
-                     'sensor_id': sensors_parameters.sensor.name, 'parameter_id': sensors_parameters.parameter.name} for sensors_parameters in sensors_parameters])
-
-# Добавление Sensor_parameter
-@sensors_parameters_bp.route('/add', methods=['POST'])
-def add_sensor():
+# Назначить параметр датчику
+@sensors_parameters_bp.route('/<int:sensor_id>/<int:parameter_id>', methods=['POST'])
+@jwt_required()
+def add_sensor_parameter(sensor_id, parameter_id):
     data = request.get_json()
-    if not data or not data.get('key') or not data.get('sensor_id')\
-            or not data.get('parameter_id'):
-        return jsonify({'error': 'key, sensor_id and parameter_id are required'}), 400
+    key = data.get('key')
+    # Проверяем на уникальность связки (sensor_id, parameter_id)
+    existing = Sensor_parameter.query.get((sensor_id, parameter_id))
+    if existing:
+        return jsonify({'message': 'Parameter already assigned'}), 400
 
-    new_sensors_parameter = Sensor_parameter(key=data['key'], sensor_id=data['sensor_id'],parameter_id=data['parameter_id'])
-    db.session.add(new_sensors_parameter)
+    param = Sensor_parameter(
+        sensor_id=sensor_id,
+        parameter_id=parameter_id,
+        key=key
+    )
+    db.session.add(param)
     db.session.commit()
+    return jsonify(param.to_dict()), 201
 
-    return jsonify(new_sensors_parameter.to_dict()), 201
+# Удалить параметр у датчика
+@sensors_parameters_bp.route('/<int:sensor_id>/<int:parameter_id>', methods=['DELETE'])
+@jwt_required()
+def delete_sensor_parameter(sensor_id, parameter_id):
+    param = Sensor_parameter.query.get((sensor_id, parameter_id))
+    if not param:
+        return jsonify({'message': 'Not found'}), 404
 
-
-# Изменение sensors_parameters
-@sensors_parameters_bp.route('/<sensors_parameters_id>', methods=['PUT'])
-def update_sensor(sensors_parameters_id):
-    sensors_parameters = Sensor_parameter.query.get_or_404(sensors_parameters_id)
-    data = request.get_json()
-
-    if not data:
-        return jsonify({'error': 'No data provided'}), 400
-
-    if 'key' in data:
-        sensors_parameters.key = data['key']
-    if 'sensor_id' in data:
-        sensors_parameters.sensor_id = data['sensor_id']
-    if 'parameter_id' in data:
-        sensors_parameters.parameter_id = data['parameter_id']
+    db.session.delete(param)
     db.session.commit()
-    return jsonify(sensors_parameters.to_dict()), 200
-
-
-# Удаление Sensor_parameter
-@sensors_parameters_bp.route('/<sensors_parameters_id>', methods=['DELETE'])
-def delete_sensor(sensors_parameters_id):
-    sensors_parameters = Sensor_parameter.query.get_or_404(sensors_parameters_id)
-    db.session.delete(sensors_parameters)
-    db.session.commit()
-    return jsonify({'message': 'Sensor_parameter deleted successfully'}), 200
-
-# Функция для сброса кэша при изменениях Sensor_parameter
-def clear_sensor_cache(mapper, connection, target):
-    sensor = db.session.get(Sensor, target.sensor_id)
-    if sensor:
-        # Очищаем кэш для этого сенсора
-        cache_key = f"sensor_params_{sensor.data_source}"
-        cache.delete(cache_key)
-        print(f"🗑Cleared cache for {cache_key}")
-
-# Регистрируем обработчики для всех значимых событий
-event.listen(Sensor_parameter, 'after_insert', clear_sensor_cache)
-event.listen(Sensor_parameter, 'after_update', clear_sensor_cache)
-event.listen(Sensor_parameter, 'after_delete', clear_sensor_cache)
+    return jsonify({'message': 'Deleted successfully'}), 200

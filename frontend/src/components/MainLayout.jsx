@@ -7,6 +7,7 @@ import {
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import BuildIcon         from '@mui/icons-material/Build';
 import PeopleIcon        from '@mui/icons-material/People';
+import SensorsIcon       from '@mui/icons-material/Thermostat';  // или другой подходящий
 
 export default function MainLayout() {
   const navigate = useNavigate();
@@ -32,7 +33,9 @@ export default function MainLayout() {
     ...(isAdmin
       ? [
           { text: 'Управление пользователями', icon: <PeopleIcon />, path: '/users' },
-          { text: 'Управление оборудованием', icon: <BuildIcon />, path: '/manage-equipment' }
+          { text: 'Управление оборудованием', icon: <BuildIcon />, path: '/manage-equipment' },
+          { text: 'Датчики', icon: <SensorsIcon />, path: '/sensors' }
+
         ]
       : [])
   ];
