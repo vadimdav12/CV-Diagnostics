@@ -1,6 +1,4 @@
-from email.utils import parsedate_to_datetime
-
-from flask import jsonify, make_response, request, abort, Blueprint
+from flask import jsonify, request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 
@@ -9,8 +7,8 @@ sensor_records_bp = Blueprint('sensor_records', __name__)
 from ..models.sensor_record import Sensor_Record
 
 
-@sensor_records_bp.route('/')
-# @jwt_required()
+@sensor_records_bp.route('/', methods=['GET'])
+@jwt_required()
 def show_all_sensor_records():
     sensor_records = Sensor_Record.query.all()
 
@@ -19,8 +17,8 @@ def show_all_sensor_records():
                     sensor_record in sensor_records])
 
 
-@sensor_records_bp.route('/<sensor_id>')
-# @jwt_required()
+@sensor_records_bp.route('/<sensor_id>', methods=['GET'])
+@jwt_required()
 def show_sensor_records(sensor_id):
     sensor_record = Sensor_Record.query.filter_by(sensor_id=sensor_id).first()
 
@@ -42,7 +40,7 @@ def show_sensor_records(sensor_id):
 
 
 @sensor_records_bp.route('/raw_data/<sensor_id>')
-# @jwt_required()
+@jwt_required()
 def show_sensor_records_raw_data(sensor_id):
     # Получаем параметры из URL
     start_datetime_str = request.args.get('start_date')

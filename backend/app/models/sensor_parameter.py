@@ -7,7 +7,7 @@ class Sensor_parameter(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     sensor_id = db.Column(db.Integer, db.ForeignKey("sensors.id", ondelete='CASCADE'))
     parameter_id = db.Column(db.Integer, db.ForeignKey("parameters.id", ondelete='RESTRICT'))
-    key = db.Column(db.String(30))
+    key = db.Column(db.String(100))
 
     def to_dict(self):
         return {

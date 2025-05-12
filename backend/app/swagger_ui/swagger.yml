@@ -36,7 +36,9 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Role'
-  /protected:
+      security:
+        - BearerAuth: [ ]
+  /api/users/protected:
     get:
       summary: Получить роль
       tags:
@@ -492,6 +494,29 @@ paths:
                 type: string
       security:
         - BearerAuth: [ ]
+  /api/equipment/{id}/sensors:
+    get:
+      summary: Получить все датчики у оборудования
+      tags:
+        - Equipment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID Equipment
+      responses:
+        '200':
+          description: Результат
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sensor'
+      security:
+        - BearerAuth: [ ]
 
   /api/parameter/:
     get:
@@ -923,6 +948,20 @@ paths:
             application/json:
               schema:
                 type: integer
+      security:
+        - BearerAuth: [ ]
+  /api/configuration/functions:
+    get:
+      summary: Получить функции
+      tags:
+        - Configuration
+      responses:
+        '200':
+          description: Список функции
+          content:
+            application/json:
+              schema:
+                type: string
       security:
         - BearerAuth: [ ]
 components:

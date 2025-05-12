@@ -1,26 +1,30 @@
 from datetime import timedelta
 
-from flask import jsonify, make_response, request, abort, Blueprint
+from flask import jsonify, request, Blueprint
 from flask_jwt_extended import (
     create_access_token, jwt_required, get_jwt_identity
 )
 
 from werkzeug.security import check_password_hash, generate_password_hash
+from ..services.decorators import has_roles
 
 users_bp = Blueprint('users', __name__)
 
 from ..models.users import Role, User
 from app import db, user_datastore
 
-@users_bp.route('/roles/')
+@users_bp.route('/roles/', methods=['GET'])
+@jwt_required()
+@has_roles(allowed_roles=['admin'])
 def show_roles():
 
     roles = Role.query.all()
     return jsonify([{'id': role.id, 'name': role.name} for role in roles])
 
 
-@users_bp.route('/')
-#@jwt_required()
+@users_bp.route('/', methods=['GET'])
+@jwt_required()
+@has_roles(allowed_roles=['admin'])
 def show_users():
     users = User.query.all()
 
@@ -29,7 +33,7 @@ def show_users():
 
 # Защищенный маршрут
 @users_bp.route('/protected', methods=['GET'])
-#@jwt_required()
+@jwt_required()
 def protected():
     user_id = get_jwt_identity()
 
@@ -38,6 +42,8 @@ def protected():
 
 # Добавление пользователя
 @users_bp.route('/add', methods=['POST'])
+@jwt_required()
+@has_roles(allowed_roles=['admin'])
 def add_user():
     data = request.get_json()
     if not data or not data.get('username') or not data.get('email') or not data.get('password'):
@@ -60,6 +66,8 @@ def add_user():
 
 # Изменение пользователя
 @users_bp.route('/<user_id>', methods=['PUT'])
+@jwt_required()
+@has_roles(allowed_roles=['admin'])
 def update_user(user_id):
     user = User.query.get_or_404(user_id)
     data = request.get_json()
@@ -83,6 +91,8 @@ def update_user(user_id):
 
 # Удаление пользователя
 @users_bp.route('/<user_id>', methods=['DELETE'])
+@jwt_required()
+@has_roles(allowed_roles=['admin'])
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     db.session.delete(user)
@@ -109,6 +119,4 @@ def token():
         additional_claims = {"role": [i.name for i in user.roles]}
         access_token = create_access_token(identity=user.id, expires_delta=timedelta(minutes=120), additional_claims=additional_claims)
         return jsonify(access_token=access_token, role=additional_claims['role'], user_id=user.id), 200
-        #return access_token, 200
-        #return jsonify(access_token=access_token), 200
     return 'Could not verify', 403
