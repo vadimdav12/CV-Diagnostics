@@ -1,4 +1,4 @@
-from flask import jsonify, make_response, request, abort, Blueprint
+from flask import jsonify, request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
 parameter_bp = Blueprint('parameter', __name__)
@@ -6,8 +6,8 @@ parameter_bp = Blueprint('parameter', __name__)
 from ..models.parameter import Parameter
 from app import db
 
-@parameter_bp.route('/')
-#@jwt_required()
+@parameter_bp.route('/', methods=['GET'])
+@jwt_required()
 def show_parameter():
     parameters = Parameter.query.all()
 
@@ -15,6 +15,7 @@ def show_parameter():
 
 # Добавление Parameter
 @parameter_bp.route('/add', methods=['POST'])
+@jwt_required()
 def add_sensor():
     data = request.get_json()
     if not data or not data.get('name') or not data.get('unit'):
@@ -31,6 +32,7 @@ def add_sensor():
 
 # Изменение parameter
 @parameter_bp.route('/<parameter_id>', methods=['PUT'])
+@jwt_required()
 def update_sensor(parameter_id):
     parameter = Parameter.query.get_or_404(parameter_id)
     data = request.get_json()
@@ -51,6 +53,7 @@ def update_sensor(parameter_id):
 
 # Удаление Parameter
 @parameter_bp.route('/<parameter_id>', methods=['DELETE'])
+@jwt_required()
 def delete_sensor(parameter_id):
     parameter = Parameter.query.get_or_404(parameter_id)
 

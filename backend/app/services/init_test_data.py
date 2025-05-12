@@ -12,10 +12,9 @@ def create_sensors_and_equipment():
     from app.models.parameter import Parameter
     from app.models.sensor import Sensor
     from app.models.sensor_parameter import Sensor_parameter
-    from app.models.sensor_record import Sensor_Record
     from app.models.equipment import Equipment
 
-    types = ["токовый", "тепловой", "вибрационный"]
+    types = ["токовый", "вибрационный", "тепловой"]
     for i in types:
         new_type = Sensor_type(name=i)
         db.session.add(new_type)
@@ -37,12 +36,18 @@ def create_sensors_and_equipment():
         n_s = Sensor(name=name, data_source=f"sensor/{i}", sensor_type_id=i, equipment=n_q)
         db.session.add(n_s)
     db.session.commit()
+    #ключи параметров в принимаемом от датчика json
+    keys = ["telemetry.inrush_current", "telemetry.voltage_rms", "telemetry.thd_current",
+            "telemetry.acceleration_rms", "telemetry.displacement_rms", "telemetry.dominant_frequency",
+            "telemetry.temperature_current", "telemetry.temperature_rate_change", "telemetry.temperature_average"]
     sensor_ids = [1, 2, 3]
-    keys = ["telemetry.inrush_current", "telemetry.voltage_rms", "telemetry.thd_current", "telemetry.acceleration_rms", "telemetry.displacement_rms", "telemetry.dominant_frequency"
-        , "telemetry.temperature_current", "telemetry.temperature_rate_change", "telemetry.temperature_average"]
     for i in sensor_ids:
-        s_p = Sensor_parameter(sensor_id=i, parameter_id=i, key=f"{keys[(i - 1) * 3]}")
-        db.session.add(s_p)
+        sensor_params = []
+        #3 отслеживаемых параметра на 1 датчик
+        for j in range(3):
+            s_p = Sensor_parameter(sensor_id=i, parameter_id=(j+1)+ (i - 1) * 3, key=f"{keys[j+ (i - 1) * 3]}")
+            sensor_params.append(s_p)
+        db.session.add_all(sensor_params)
     db.session.commit()
 
     print("Sensors and Equipment created successfully!")
@@ -51,18 +56,20 @@ def create_sensors_and_equipment():
 def insert_bulk_data(count):
     from app import db
     from app.models.sensor_record import Sensor_Record
+    from app.models.sensor_parameter import Sensor_parameter
 
     sensor_ids = [1, 2, 3]            # ID датчиков
-    parameter_ids = [1, 2, 3]               # ID параметров (например: температура, влажность, давление)
-    print(datetime.now(timezone.utc))
     batch = []
     for _ in range(count):
+        sensor_id = random.choice(sensor_ids)
+        parameter_ids = db.session.execute(db.select(Sensor_parameter.parameter_id)
+                           .filter_by(sensor_id=sensor_id)).scalars().all()
         data = Sensor_Record(
             timestamp=datetime.now(timezone.utc),
             value=round(random.uniform(0, 100), 2),
-            sensor_id=random.choice(sensor_ids),
+            sensor_id=sensor_id,
             parameter_id=random.choice(parameter_ids))
-        time.sleep(0.1)
+        time.sleep(0.01)
         batch.append(data)
 
     # Вставляем весь список сразу одной транзакцией

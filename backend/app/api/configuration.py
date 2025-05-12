@@ -1,7 +1,5 @@
 from flask import jsonify, Blueprint, request
-from flask_jwt_extended import (
-    create_access_token, jwt_required, get_jwt_identity
-)
+from flask_jwt_extended import  jwt_required
 
 from app import db
 from app.core.block_processor import Block_Processor
@@ -11,6 +9,7 @@ configuration_bp = Blueprint('configuration', __name__)
 
 # получить конфигурацию
 @configuration_bp.route('/<user_id>/<equipment_id>', methods=['GET'])
+@jwt_required()
 def get_configuration(user_id, equipment_id):
     config = Configuration.query.get((user_id, equipment_id))
     if not config:
@@ -19,6 +18,7 @@ def get_configuration(user_id, equipment_id):
 
 # добавление конфигурации
 @configuration_bp.route('/<user_id>/<equipment_id>', methods=['POST'])
+@jwt_required()
 def add_configuration(user_id, equipment_id):
     if not request.is_json:
         return jsonify({'message': 'Not JSON'}), 400
@@ -37,6 +37,7 @@ def add_configuration(user_id, equipment_id):
 
 # Изменение конфигурации
 @configuration_bp.route('/<user_id>/<equipment_id>', methods=['PUT'])
+@jwt_required()
 def update_configuration(user_id, equipment_id):
     config = Configuration.query.get((user_id, equipment_id))
     if not config:
@@ -53,6 +54,7 @@ def update_configuration(user_id, equipment_id):
 
 # Удаление конфигурации
 @configuration_bp.route('/<user_id>/<equipment_id>', methods=['DELETE'])
+@jwt_required()
 def delete_configuration(user_id, equipment_id):
     config = Configuration.query.get((user_id, equipment_id))
     if not config:
@@ -62,6 +64,7 @@ def delete_configuration(user_id, equipment_id):
     return jsonify({'message': 'Configuration deleted successfully'}), 200
 
 @configuration_bp.route('/<user_id>/<equipment_id>/apply', methods=['GET'])
+@jwt_required()
 def apply_configuration(user_id, equipment_id):
     config = Configuration.query.get((user_id, equipment_id))
     if not config:
@@ -79,3 +82,9 @@ def apply_configuration(user_id, equipment_id):
         }
 
     return jsonify({'message': 'Configuration applied successfully', 'result': serializable}), 200
+
+@configuration_bp.route('/functions', methods=['GET'])
+@jwt_required()
+def get_functions():
+    function_names = ['spectrum','func1']
+    return jsonify({'result': function_names}), 200

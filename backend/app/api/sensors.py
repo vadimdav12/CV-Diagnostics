@@ -1,17 +1,14 @@
-from datetime import timedelta
-
-from flask import jsonify, make_response, request, abort, Blueprint
+from flask import jsonify, request, Blueprint
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from sqlalchemy import event
 
 sensors_bp = Blueprint('sensors', __name__)
 
 from ..models.sensor import Sensor
-from app import db, cache, mqtt
+from app import db, mqtt
 
 
-@sensors_bp.route('/')
-#@jwt_required()
+@sensors_bp.route('/', methods=['GET'])
+@jwt_required()
 def show_sensors():
     sensors = Sensor.query.all()
 
@@ -20,6 +17,7 @@ def show_sensors():
 
 # Добавление sensor
 @sensors_bp.route('/add', methods=['POST'])
+@jwt_required()
 def add_sensor():
     data = request.get_json()
     if not data or not data.get('name') or not data.get('data_source') or not data.get('sensor_type_id')\
@@ -39,6 +37,7 @@ def add_sensor():
 
 # Изменение sensor
 @sensors_bp.route('/<sensor_id>', methods=['PUT'])
+@jwt_required()
 def update_sensor(sensor_id):
     sensor = Sensor.query.get_or_404(sensor_id)
     data = request.get_json()
@@ -66,6 +65,7 @@ def update_sensor(sensor_id):
 
 # Удаление sensor
 @sensors_bp.route('/<sensor_id>', methods=['DELETE'])
+@jwt_required()
 def delete_sensor(sensor_id):
     sensor = Sensor.query.get_or_404(sensor_id)
     data_source = sensor.data_source
@@ -74,4 +74,3 @@ def delete_sensor(sensor_id):
 
     mqtt.unsubscribe(data_source)
     return jsonify({'message': 'Sensor deleted successfully'}), 200
-

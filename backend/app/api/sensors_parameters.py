@@ -14,7 +14,6 @@ sensors_parameters_bp = Blueprint('sensors_parameters', __name__, url_prefix='/a
 @sensors_parameters_bp.route('/<int:sensor_id>', methods=['GET'])
 @jwt_required()
 def get_sensor_parameters(sensor_id):
-    # Опционально: проверить user_id из токена, если параметры привязаны к пользователю
     params = Sensor_parameter.query.filter_by(sensor_id=sensor_id).all()
     return jsonify([p.to_dict() for p in params]), 200
 
