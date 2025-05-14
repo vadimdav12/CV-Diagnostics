@@ -14,8 +14,8 @@ from ..models.users import Role, User
 from app import db, user_datastore
 
 @users_bp.route('/roles/', methods=['GET'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def show_roles():
 
     roles = Role.query.all()
@@ -23,8 +23,8 @@ def show_roles():
 
 
 @users_bp.route('/', methods=['GET'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def show_users():
     users = User.query.all()
 
@@ -33,7 +33,7 @@ def show_users():
 
 # Защищенный маршрут
 @users_bp.route('/protected', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def protected():
     user_id = get_jwt_identity()
 
@@ -42,8 +42,8 @@ def protected():
 
 # Добавление пользователя
 @users_bp.route('/add', methods=['POST'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def add_user():
     data = request.get_json()
     if not data or not data.get('username') or not data.get('email') or not data.get('password'):
@@ -66,8 +66,8 @@ def add_user():
 
 # Изменение пользователя
 @users_bp.route('/<user_id>', methods=['PUT'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def update_user(user_id):
     user = User.query.get_or_404(user_id)
     data = request.get_json()
@@ -91,8 +91,8 @@ def update_user(user_id):
 
 # Удаление пользователя
 @users_bp.route('/<user_id>', methods=['DELETE'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def delete_user(user_id):
     user = User.query.get_or_404(user_id)
     db.session.delete(user)

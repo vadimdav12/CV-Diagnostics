@@ -7,7 +7,7 @@ from ..models.sensor_type import Sensor_type
 from app import db
 
 @sensor_type_bp.route('/', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def show_sensor_type():
     sensor_types = Sensor_type.query.all()
 
@@ -15,7 +15,7 @@ def show_sensor_type():
 
 # Добавление Sensor_type
 @sensor_type_bp.route('/add', methods=['POST'])
-@jwt_required()
+#@jwt_required()
 def add_sensor():
     data = request.get_json()
     if not data or not data.get('name'):
@@ -32,7 +32,7 @@ def add_sensor():
 
 # Изменение sensor_type
 @sensor_type_bp.route('/<sensor_type_id>', methods=['PUT'])
-@jwt_required()
+#@jwt_required()
 def update_sensor(sensor_type_id):
     sensor_type = Sensor_type.query.get_or_404(sensor_type_id)
     data = request.get_json()
@@ -51,7 +51,7 @@ def update_sensor(sensor_type_id):
 
 # Удаление Sensor_type
 @sensor_type_bp.route('/<sensor_type_id>', methods=['DELETE'])
-@jwt_required()
+#@jwt_required()
 def delete_sensor(sensor_type_id):
     sensor_type = Sensor_type.query.get_or_404(sensor_type_id)
 

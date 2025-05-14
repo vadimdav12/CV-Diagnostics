@@ -5,12 +5,13 @@ from app.algorithms.algorithms import execute_function
 
 
 class Block_Processor:
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], last_update=-1):
         self.config = config
         self.blocks = config.get('blocks', {})
         self.connections = config.get('connections', [])
         self.values_y: Dict[str, Any] = {}  # Хранит вычисленные значения блоков по X
         self.values_x: Dict[str, Any] = {}  # Хранит вычисленные значения блоков по Y
+        self.last_update = last_update
 
     def process(self):
         # 1. Найти все блоки-источники (тип 'dataSource')
@@ -46,16 +47,12 @@ class Block_Processor:
         block = self.blocks[block_id]
 
         if block['type'] == 'dataSource':
-            from ..models.sensor_record import Sensor_Record
-            from app import db
-
             sensor_id = block['parameters'].get('sensor_id')
             parameter_id = block['parameters'].get('parameter_id')
-            values = db.session.execute(db.select(Sensor_Record.value)
-                .filter_by(sensor_id=sensor_id, parameter_id=parameter_id)).scalars().all()
-            timestamps = db.session.execute(db.select(Sensor_Record.timestamp)
-                .filter_by(sensor_id=sensor_id, parameter_id=parameter_id)).scalars().all()
-            # Источник данных - берем значение из параметров
+            if self.last_update == -1:
+                timestamps, values = get_data(sensor_id, parameter_id)
+            else:
+                timestamps, values = get_data(sensor_id, parameter_id, self.last_update)
             return timestamps, values
 
         elif block['type'] == 'function':
@@ -81,3 +78,22 @@ class Block_Processor:
         #  берем первое входящее соединение
         source_id = incoming_conns[0]['source']
         return self.values_x.get(source_id), self.values_y.get(source_id)
+
+def get_data(sensor_id, parameter_id, last_update=-1):
+    from ..models.sensor_record import Sensor_Record
+    from app import db
+
+    # Источник данных - берем значение из параметров
+    if last_update == -1:
+        result = db.session.execute(db.select(Sensor_Record.value, Sensor_Record.timestamp)
+            .filter_by(sensor_id=sensor_id, parameter_id=parameter_id).order_by(Sensor_Record.timestamp)).all()
+    else:
+        # Запрос только новых данных, которые появились после `last_update`
+        result = Sensor_Record.query.with_entities(Sensor_Record.sensor_id, Sensor_Record.parameter_id,
+            Sensor_Record.timestamp, Sensor_Record.value).filter(Sensor_Record.sensor_id==sensor_id,
+            Sensor_Record.parameter_id==parameter_id, Sensor_Record.timestamp > last_update
+        ).order_by(Sensor_Record.timestamp).all()
+
+    values = [row.value for row in result]
+    timestamps = [row.timestamp for row in result]
+    return timestamps, values
