@@ -39,8 +39,10 @@ export default function VisualizationPage() {
           return;
         }
       }
+      const currentDate = new Date();
+      const dateTimeString = currentDate.toISOString();
       const { data } = await axios.get(
-        `/api/configuration/${userId}/${equipmentId}/apply`
+        `/api/configuration/${userId}/${equipmentId}/apply?last_update=${dateTimeString}`
       );
       setResult(data.result || {});
       setLoading(false);

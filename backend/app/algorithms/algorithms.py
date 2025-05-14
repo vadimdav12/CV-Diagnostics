@@ -14,6 +14,11 @@ def spectrum(signal: List[float], fs: float = 1000, remove_dc: bool = True, wind
     window: тип оконной функции
     """
     # Приводим все значения к float
+    # Проверка на пустой сигнал
+    if len(signal) == 0:
+        return np.array([]), np.array([])  # или raise ValueError(...)
+
+    # Приводим все значения к float
     signal = np.array([float(x) for x in signal], dtype=float)
     n = len(signal)
 
@@ -35,7 +40,6 @@ def spectrum(signal: List[float], fs: float = 1000, remove_dc: bool = True, wind
     fft_result = fft(signal_windowed)[:n // 2]
     frequencies = np.fft.fftfreq(n, 1 / fs)[:n // 2]
     amplitudes = np.abs(fft_result) / (n // 2)  # нормализация
-
     return frequencies, amplitudes
 
 def func1(values_x, values_y):

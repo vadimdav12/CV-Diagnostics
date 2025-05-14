@@ -9,8 +9,7 @@ from ..models.equipment import Equipment
 from app import db
 
 @equipment_bp.route('/', methods=['GET'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
 def show_equipment():
     equipments = Equipment.query.all()
 
@@ -18,8 +17,8 @@ def show_equipment():
 
 # Добавление equipment
 @equipment_bp.route('/add', methods=['POST'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def add_equipment():
     data = request.get_json()
     if not data or not data.get('name'):
@@ -36,8 +35,8 @@ def add_equipment():
 
 # Изменение equipment
 @equipment_bp.route('/<equipment_id>', methods=['PUT'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def update_equipment(equipment_id):
     equipment = Equipment.query.get_or_404(equipment_id)
     data = request.get_json()
@@ -56,8 +55,8 @@ def update_equipment(equipment_id):
 
 # Удаление equipment
 @equipment_bp.route('/<equipment_id>', methods=['DELETE'])
-@jwt_required()
-@has_roles(allowed_roles=['admin'])
+#@jwt_required()
+#@has_roles(allowed_roles=['admin'])
 def delete_equipment(equipment_id):
     equipment = Equipment.query.get_or_404(equipment_id)
 
@@ -70,7 +69,7 @@ def delete_equipment(equipment_id):
 
 #Получить все датчики у оборудования
 @equipment_bp.route('/<equipment_id>/sensors', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def get_equipment_sensors(equipment_id):
     equipment = Equipment.query.get_or_404(equipment_id)
 

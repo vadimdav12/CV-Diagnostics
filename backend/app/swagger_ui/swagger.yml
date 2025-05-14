@@ -941,6 +941,13 @@ paths:
           schema:
             type: integer
           description: ID equipment
+        - name: last_update
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Начальная дата в формате YYYY-MM-DD
+          required: true
       responses:
         '200':
           description: Список значений Sensor_records

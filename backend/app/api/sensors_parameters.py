@@ -12,14 +12,14 @@ sensors_parameters_bp = Blueprint('sensors_parameters', __name__, url_prefix='/a
 
 # Получить все параметры, назначенные датчику
 @sensors_parameters_bp.route('/<int:sensor_id>', methods=['GET'])
-@jwt_required()
+#@jwt_required()
 def get_sensor_parameters(sensor_id):
     params = Sensor_parameter.query.filter_by(sensor_id=sensor_id).all()
     return jsonify([p.to_dict() for p in params]), 200
 
 # Назначить параметр датчику
 @sensors_parameters_bp.route('/<int:sensor_id>/<int:parameter_id>', methods=['POST'])
-@jwt_required()
+#@jwt_required()
 def add_sensor_parameter(sensor_id, parameter_id):
     data = request.get_json()
 
@@ -39,7 +39,7 @@ def add_sensor_parameter(sensor_id, parameter_id):
 
 # Удалить параметр у датчика
 @sensors_parameters_bp.route('/<int:sensor_id>/<int:parameter_id>', methods=['DELETE'])
-@jwt_required()
+#@jwt_required()
 def delete_sensor_parameter(sensor_id, parameter_id):
     param = Sensor_parameter.query.filter_by(sensor_id=sensor_id, parameter_id=parameter_id).first()
     if not param:
