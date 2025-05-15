@@ -31,7 +31,7 @@ const initialBlocks = {
 };
 
 /** Вычисляет метку блока на основе его типа и параметров */
-function deriveLabel(block, sensorsList, sensorTypesList, parametersList) {
+function deriveLabel(block, sensorsList, sensorTypesList) {
   if (block.type === 'dataSource') {
     const s = sensorsList.find(s => s.id === block.parameters.sensor_id);
     if (!s) return 'Датчик';
@@ -99,19 +99,18 @@ export default function Configurator() {
       .catch(console.error);
   }, [equipmentId]);
 
-  // если уже есть сохранённая конфигурация — загружаем её и восстанавливаем позиции из config
+  // загрузить существующую конфигурацию
   useEffect(() => {
     if (!userId || !equipmentId) return;
     axios.get(`/api/configuration/${userId}/${equipmentId}`)
       .then(res => {
         const saved = res.data.config;
         setConfig(saved);
-        // Восстанавливаем uiBlocks по сохранённым x,y
         const blocksArr = Object.entries(saved.blocks).map(([uid, b]) => ({
           uid,
           type: b.type,
           parameters: b.parameters,
-          label: deriveLabel(b, sensorsList, sensorTypesList, parametersList),
+          label: deriveLabel(b, sensorsList, sensorTypesList),
           x: typeof b.x === 'number' ? b.x : 20,
           y: typeof b.y === 'number' ? b.y : 20
         }));
@@ -120,7 +119,7 @@ export default function Configurator() {
       .catch(err => {
         if (err.response?.status !== 404) console.error(err);
       });
-  }, [userId, equipmentId, sensorsList, sensorTypesList, parametersList]);
+  }, [userId, equipmentId, sensorsList, sensorTypesList]);
 
   // добавление блока на холст
   const handleDrop = e => {
@@ -144,13 +143,18 @@ export default function Configurator() {
   const handleDragStartFromPanel = (e, b) =>
     e.dataTransfer.setData('block', JSON.stringify(b));
 
-  // соединения
+  // соединения: теперь датчик→график разрешён
   const startConnection = id => setConnectingFrom(id);
   const completeConnection = id => {
     if (!connectingFrom || connectingFrom === id) return;
     const from = uiBlocks.find(b => b.uid === connectingFrom);
     const to   = uiBlocks.find(b => b.uid === id);
-    const rules = { dataSource: ['function'], function: ['chart'], chart: [] };
+    // расширяем правило: dataSource может идти сразу на chart
+    const rules = {
+      dataSource: ['function', 'chart'],
+      function: ['chart'],
+      chart: []
+    };
     if (!rules[from.type].includes(to.type)) {
       alert('Неверное соединение');
     } else if (config.connections.some(c => c.source === connectingFrom)) {
@@ -165,6 +169,7 @@ export default function Configurator() {
     }
     setConnectingFrom(null);
   };
+
   const renderArrows = () =>
     config.connections.map((c, i) => {
       const f = uiBlocks.find(b => b.uid === c.source);
