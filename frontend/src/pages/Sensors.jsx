@@ -1,4 +1,4 @@
-// src/pages/Sensors.jsx
+// frontend/src/pages/Sensors.jsx
 
 import React, { useState, useEffect } from 'react';
 import {
@@ -7,9 +7,9 @@ import {
   Grid,
   Paper,
   Box,
-  FormControlLabel,
   Checkbox,
-  Button
+  Button,
+  TextField
 } from '@mui/material';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
@@ -62,9 +62,22 @@ export default function Sensors() {
       if (isAssigned) {
         await axios.delete(`/api/sensors_parameters/${sid}/${paramId}`);
       } else {
-        await axios.post(`/api/sensors_parameters/${sid}/${paramId}`, { key: '' });
+        const key = window.prompt('Введите JSON-ключ для параметра (точечная нотация)', '');
+        if (!key) return;
+        await axios.post(`/api/sensors_parameters/${sid}/${paramId}`, { key });
       }
       loadAssigned(sid);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // обновить ключ уже назначенного параметра
+  const updateKey = async (paramId, newKey) => {
+    if (!selectedSensor) return;
+    try {
+      await axios.put(`/api/sensors_parameters/${selectedSensor.id}/${paramId}`, { key: newKey });
+      loadAssigned(selectedSensor.id);
     } catch (err) {
       console.error(err);
     }
@@ -84,12 +97,10 @@ export default function Sensors() {
               onClick={() => handleSelectSensor(s)}
               sx={{
                 p: 2, mb: 1, cursor: 'pointer',
-                bgcolor: selectedSensor?.id === s.id ? 'grey.200' : 'white'
+                bgcolor: selectedSensor?.id === s.id ? 'action.selected' : 'background.paper'
               }}
             >
-              <Typography>
-                {s.name} ({s.sensor_type_id})
-              </Typography>
+              <Typography>{s.name}</Typography>
             </Paper>
           ))}
         </Grid>
@@ -99,41 +110,31 @@ export default function Sensors() {
           {selectedSensor ? (
             <>
               <Typography variant="h6" gutterBottom>
-                Параметры для {selectedSensor.name}
+                Параметры для датчика: {selectedSensor.name}
               </Typography>
-
-              {assignedParams.length === 0 && (
-                <Typography color="text.secondary">
-                  У этого датчика нет назначенных параметров.
-                </Typography>
-              )}
-
-              {assignedParams.map(ap => {
-                const meta = parametersList.find(p => p.id === ap.parameter_id);
-                return meta ? (
-                  <FormControlLabel
-                    key={meta.id}
-                    control={
-                      <Checkbox
-                        checked={true}
-                        onChange={() => toggleAssigned(meta.id)}
+              {parametersList.map(param => {
+                const isAssigned = assignedParams.some(p => p.parameter_id === param.id);
+                return (
+                  <Box key={param.id} sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                    <Checkbox
+                      checked={isAssigned}
+                      onChange={() => toggleAssigned(param.id)}
+                    />
+                    <Typography sx={{ mr: 2 }}>{param.name}</Typography>
+                    {isAssigned && (
+                      <TextField
+                        size="small"
+                        label="JSON-ключ"
+                        value={assignedParams.find(p => p.parameter_id === param.id)?.key || ''}
+                        onChange={e => updateKey(param.id, e.target.value)}
                       />
-                    }
-                    label={meta.name}
-                  />
-                ) : null;
+                    )}
+                  </Box>
+                );
               })}
-
-              <Box sx={{ mt: 2 }}>
-                <Button variant="outlined" onClick={() => loadAssigned(selectedSensor.id)}>
-                  Обновить
-                </Button>
-              </Box>
             </>
           ) : (
-            <Typography>
-              Выберите сенсор слева, чтобы увидеть и управлять его параметрами.
-            </Typography>
+            <Typography>Выберите датчик слева, чтобы увидеть и управлять его параметрами.</Typography>
           )}
         </Grid>
       </Grid>

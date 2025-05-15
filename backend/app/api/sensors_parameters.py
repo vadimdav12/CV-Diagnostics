@@ -1,4 +1,4 @@
-# app/api/sensors_parameters.py
+# backend/app/api/sensors_parameters.py
 
 from flask import Blueprint, jsonify, request
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -22,7 +22,6 @@ def get_sensor_parameters(sensor_id):
 #@jwt_required()
 def add_sensor_parameter(sensor_id, parameter_id):
     data = request.get_json()
-
     if not data or not data.get('key'):
         return jsonify({'error': 'key param is required'}), 400
 
@@ -30,12 +29,27 @@ def add_sensor_parameter(sensor_id, parameter_id):
     if Sensor_parameter.query.filter_by(sensor_id=sensor_id, parameter_id=parameter_id).first():
         return jsonify({'message': 'Parameter already assigned'}), 400
 
-    key = data.get('key')
-
+    key = data['key']
     param = Sensor_parameter(sensor_id=sensor_id, parameter_id=parameter_id, key=key)
     db.session.add(param)
     db.session.commit()
     return jsonify(param.to_dict()), 201
+
+# Обновить ключ привязки параметра
+@sensors_parameters_bp.route('/<int:sensor_id>/<int:parameter_id>', methods=['PUT'])
+#@jwt_required()
+def update_sensor_parameter(sensor_id, parameter_id):
+    data = request.get_json()
+    if not data or not data.get('key'):
+        return jsonify({'error': 'key param is required'}), 400
+
+    sp = Sensor_parameter.query.filter_by(sensor_id=sensor_id, parameter_id=parameter_id).first()
+    if not sp:
+        return jsonify({'message': 'Not found'}), 404
+
+    sp.key = data['key']
+    db.session.commit()
+    return jsonify(sp.to_dict()), 200
 
 # Удалить параметр у датчика
 @sensors_parameters_bp.route('/<int:sensor_id>/<int:parameter_id>', methods=['DELETE'])
@@ -49,12 +63,11 @@ def delete_sensor_parameter(sensor_id, parameter_id):
     db.session.commit()
     return jsonify({'message': 'Deleted successfully'}), 200
 
-#Необходимо для  MQTT !!!
+# Необходимо для MQTT !!!
 # Функция для сброса кэша при изменениях Sensor_parameter
 def clear_sensor_cache(mapper, connection, target):
     sensor = db.session.get(Sensor, target.sensor_id)
     if sensor:
-        # Очищаем кэш для этого сенсора
         cache_key = f"sensor_params_{sensor.data_source}"
         cache.delete(cache_key)
         print(f"Cleared cache for {cache_key}")
