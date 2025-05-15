@@ -69,7 +69,7 @@ def insert_bulk_data(count):
             value=round(random.uniform(0, 100), 2),
             sensor_id=sensor_id,
             parameter_id=random.choice(parameter_ids))
-        time.sleep(0.01)
+        time.sleep(0.0001)
         batch.append(data)
 
     # Вставляем весь список сразу одной транзакцией

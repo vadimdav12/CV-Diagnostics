@@ -9,7 +9,7 @@ import axios from 'axios';
 /**
  * Начальные данные для панели перетаскивания:
  * - dataSources: единый блок "Датчик"
- * - functions и charts — без изменений
+ * - functions, charts — без изменений
  */
 const initialBlocks = {
   dataSources: [
@@ -30,6 +30,26 @@ const initialBlocks = {
   ]
 };
 
+/** Вычисляет метку блока на основе его типа и параметров */
+function deriveLabel(block, sensorsList, sensorTypesList, parametersList) {
+  if (block.type === 'dataSource') {
+    const s = sensorsList.find(s => s.id === block.parameters.sensor_id);
+    if (!s) return 'Датчик';
+    const typeObj = sensorTypesList.find(t => t.id === s.sensor_type_id);
+    const typeName = typeObj ? typeObj.name : s.sensor_type_id;
+    return `${s.name} (ID:${s.id}, ${typeName})`;
+  }
+  if (block.type === 'function') {
+    const f = initialBlocks.functions.find(f => f.parameters.function === block.parameters.function);
+    return f ? f.label : block.parameters.function;
+  }
+  if (block.type === 'chart') {
+    const c = initialBlocks.charts.find(c => c.parameters.chart_type === block.parameters.chart_type);
+    return c ? c.label : block.parameters.chart_type;
+  }
+  return '';
+}
+
 export default function Configurator() {
   const navigate     = useNavigate();
   const location     = useLocation();
@@ -40,6 +60,7 @@ export default function Configurator() {
     ? (JSON.parse(atob(token.split('.')[1])).sub || JSON.parse(atob(token.split('.')[1])).id)
     : null;
 
+  // основное состояние
   const [config, setConfig]                     = useState({ version: '1.0', blocks: {}, connections: [] });
   const [uiBlocks, setUiBlocks]                 = useState([]);
   const [connectingFrom, setConnectingFrom]     = useState(null);
@@ -49,12 +70,12 @@ export default function Configurator() {
   const [sensorParamsList, setSensorParamsList] = useState([]);
   const [selectedBlockUid, setSelectedBlockUid] = useState(null);
 
-  // Устанавливаем JWT-токен для axios
+  // установить токен
   useEffect(() => {
     if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   }, [token]);
 
-  // Загружаем сенсоры, их типы и справочник параметров
+  // загрузить справочники: sensors, sensor-types, parameters
   useEffect(() => {
     const sensorsUrl = equipmentId
       ? `/api/equipment/${equipmentId}/sensors`
@@ -66,7 +87,6 @@ export default function Configurator() {
       })
       .catch(console.error);
 
-    // Список типов датчиков
     axios.get('/api/sensor-type')
       .then(res => setSensorTypesList(res.data))
       .catch(console.error);
@@ -79,29 +99,52 @@ export default function Configurator() {
       .catch(console.error);
   }, [equipmentId]);
 
-  // Добавление блока на холст
+  // если уже есть сохранённая конфигурация — загружаем её и восстанавливаем позиции из config
+  useEffect(() => {
+    if (!userId || !equipmentId) return;
+    axios.get(`/api/configuration/${userId}/${equipmentId}`)
+      .then(res => {
+        const saved = res.data.config;
+        setConfig(saved);
+        // Восстанавливаем uiBlocks по сохранённым x,y
+        const blocksArr = Object.entries(saved.blocks).map(([uid, b]) => ({
+          uid,
+          type: b.type,
+          parameters: b.parameters,
+          label: deriveLabel(b, sensorsList, sensorTypesList, parametersList),
+          x: typeof b.x === 'number' ? b.x : 20,
+          y: typeof b.y === 'number' ? b.y : 20
+        }));
+        setUiBlocks(blocksArr);
+      })
+      .catch(err => {
+        if (err.response?.status !== 404) console.error(err);
+      });
+  }, [userId, equipmentId, sensorsList, sensorTypesList, parametersList]);
+
+  // добавление блока на холст
   const handleDrop = e => {
     const data = e.dataTransfer.getData('block');
     if (!data) return;
     const block = JSON.parse(data);
     const rect  = canvasRef.current.getBoundingClientRect();
     const uid   = `${block.type}_${Date.now()}`;
-    const newBlock = {
-      ...block,
-      uid,
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    };
+    const x     = e.clientX - rect.left;
+    const y     = e.clientY - rect.top;
+    const newBlock = { ...block, uid, x, y, label: block.label };
     setUiBlocks(u => [...u, newBlock]);
     setConfig(c => ({
       ...c,
-      blocks: { ...c.blocks, [uid]: { type: block.type, parameters: block.parameters } }
+      blocks: {
+        ...c.blocks,
+        [uid]: { type: block.type, parameters: block.parameters, x, y }
+      }
     }));
   };
-  const handleDragStartFromPanel = (e, block) =>
-    e.dataTransfer.setData('block', JSON.stringify(block));
+  const handleDragStartFromPanel = (e, b) =>
+    e.dataTransfer.setData('block', JSON.stringify(b));
 
-  // Соединения между блоками
+  // соединения
   const startConnection = id => setConnectingFrom(id);
   const completeConnection = id => {
     if (!connectingFrom || connectingFrom === id) return;
@@ -136,56 +179,68 @@ export default function Configurator() {
       );
     });
 
-  // Перетаскивание и удаление блоков
-  const handleBlockDrag = (uid, dx, dy) =>
-    setUiBlocks(u => u.map(b => b.uid === uid ? { ...b, x: b.x + dx, y: b.y + dy } : b));
+  // перетаскивание блоков
+  const handleBlockDrag = (uid, dx, dy) => {
+    setUiBlocks(u => u.map(b =>
+      b.uid === uid ? { ...b, x: b.x + dx, y: b.y + dy } : b
+    ));
+    setConfig(c => ({
+      ...c,
+      blocks: {
+        ...c.blocks,
+        [uid]: {
+          ...c.blocks[uid],
+          x: c.blocks[uid].x + dx,
+          y: c.blocks[uid].y + dy
+        }
+      }
+    }));
+  };
+
+  // удаление блока
   const handleDeleteBlock = uid => {
     setUiBlocks(u => u.filter(b => b.uid !== uid));
     setConfig(c => ({
       ...c,
-      blocks: Object.fromEntries(Object.entries(c.blocks).filter(([k]) => k !== uid)),
+      blocks: Object.fromEntries(
+        Object.entries(c.blocks).filter(([k]) => k !== uid)
+      ),
       connections: c.connections.filter(cn => cn.source !== uid && cn.target !== uid)
     }));
     if (selectedBlockUid === uid) setSelectedBlockUid(null);
   };
 
-  // Выбор блока для редактирования
+  // выбор блока
   const handleSelectBlock = uid => setSelectedBlockUid(uid);
   const selectedBlock = uiBlocks.find(b => b.uid === selectedBlockUid);
 
-  // Изменение параметров выбранного блока
+  // редактирование параметров
   const handleParamChange = (field, value) => {
     setUiBlocks(u => u.map(b => {
       if (b.uid !== selectedBlockUid) return b;
-      const newParams = { ...b.parameters };
-      let newLabel    = b.label;
-
+      const np = { ...b.parameters };
+      let nl = b.label;
       if (field === 'sensor_id') {
-        newParams.sensor_id    = value;
-        newParams.parameter_id = '';
-        newParams.key          = '';
-        // подтягиваем привязанные параметры
+        np.sensor_id = value;
+        np.parameter_id = '';
+        np.key = '';
         axios.get(`/api/sensors_parameters/${value}`)
-          .then(res => setSensorParamsList(res.data))
+          .then(r => setSensorParamsList(r.data))
           .catch(() => setSensorParamsList([]));
-        // обновляем метку: имя и тип датчика
         const s = sensorsList.find(s => s.id === value);
         if (s) {
-          const typeObj = sensorTypesList.find(t => t.id === s.sensor_type_id);
-          const typeName = typeObj ? typeObj.name : s.sensor_type_id;
-          newLabel = `${s.name} (ID:${s.id}, ${typeName})`;
+          const tObj = sensorTypesList.find(t => t.id === s.sensor_type_id);
+          const tn = tObj ? tObj.name : s.sensor_type_id;
+          nl = `${s.name} (ID:${s.id}, ${tn})`;
         }
       }
-
       if (field === 'parameter_id') {
-        newParams.parameter_id = value;
+        np.parameter_id = value;
         const sp = sensorParamsList.find(sp => sp.parameter_id === value);
-        if (sp) newParams.key = sp.key;
+        if (sp) np.key = sp.key;
       }
-
-      return { ...b, parameters: newParams, label: newLabel };
+      return { ...b, parameters: np, label: nl };
     }));
-
     setConfig(c => ({
       ...c,
       blocks: {
@@ -253,28 +308,37 @@ export default function Configurator() {
           ))}
           <h3>Функции</h3>
           {initialBlocks.functions.map(b => (
-            <div key={b.id} className="block" draggable
-                 onDragStart={e => handleDragStartFromPanel(e, b)}>
+            <div
+              key={b.id}
+              className="block"
+              draggable
+              onDragStart={e => handleDragStartFromPanel(e, b)}
+            >
               {b.label}
             </div>
           ))}
           <h3>Графики</h3>
           {initialBlocks.charts.map(b => (
-            <div key={b.id} className="block" draggable
-                 onDragStart={e => handleDragStartFromPanel(e, b)}>
+            <div
+              key={b.id}
+              className="block"
+              draggable
+              onDragStart={e => handleDragStartFromPanel(e, b)}
+            >
               {b.label}
             </div>
           ))}
         </aside>
 
-        <section ref={canvasRef}
-                 className="canvas"
-                 onDrop={handleDrop}
-                 onDragOver={e => e.preventDefault()}>
+        <section
+          ref={canvasRef}
+          className="canvas"
+          onDrop={handleDrop}
+          onDragOver={e => e.preventDefault()}
+        >
           <svg className="connections">
             <defs>
-              <marker id="arrowhead" markerWidth="10" markerHeight="7"
-                      refX="10" refY="3.5" orient="auto">
+              <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
                 <polygon points="0 0,10 3.5,0 7" />
               </marker>
             </defs>
@@ -301,8 +365,10 @@ export default function Configurator() {
 
           <div className="field">
             <label>Сенсор</label>
-            <select value={selectedBlock.parameters.sensor_id}
-                    onChange={e => handleParamChange('sensor_id', Number(e.target.value))}>
+            <select
+              value={selectedBlock.parameters.sensor_id}
+              onChange={e => handleParamChange('sensor_id', Number(e.target.value))}
+            >
               <option value="">— выберите —</option>
               {sensorsList.map(s => (
                 <option key={s.id} value={s.id}>{s.name}</option>
@@ -312,9 +378,11 @@ export default function Configurator() {
 
           <div className="field">
             <label>Параметр</label>
-            <select value={selectedBlock.parameters.parameter_id}
-                    disabled={!selectedBlock.parameters.sensor_id}
-                    onChange={e => handleParamChange('parameter_id', Number(e.target.value))}>
+            <select
+              value={selectedBlock.parameters.parameter_id}
+              disabled={!selectedBlock.parameters.sensor_id}
+              onChange={e => handleParamChange('parameter_id', Number(e.target.value))}
+            >
               <option value="">— выберите —</option>
               {sensorParamsList.map(sp => {
                 const p = parametersList.find(p => p.id === sp.parameter_id);
