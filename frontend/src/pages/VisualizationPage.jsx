@@ -1,53 +1,92 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+// frontend/src/pages/VisualizationPage.jsx
+
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams }           from 'react-router-dom';
 import {
-  Container, Typography, Button, Grid, CircularProgress, Box
+  Container, Typography, Button,
+  Grid, CircularProgress, Box
 } from '@mui/material';
-import axios from 'axios';
+import axios                                from 'axios';
 import {
-  ResponsiveContainer, LineChart, Line,
-  CartesianGrid, XAxis, YAxis, Tooltip, Legend
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend
 } from 'recharts';
 
 export default function VisualizationPage() {
   const { equipmentId } = useParams();
-  const navigate = useNavigate();
+  const navigate        = useNavigate();
 
-  // Получаем userId из JWT
-  const token = localStorage.getItem('access_token');
-  const userId = token
-    ? JSON.parse(atob(token.split('.')[1])).sub
-      || JSON.parse(atob(token.split('.')[1])).id
-    : null;
+  // Устанавливаем заголовок авторизации, если есть токен
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    }
+  }, []);
 
-  const [result, setResult] = useState({});
-  const [loading, setLoading] = useState(true);
+  const [result, setResult]     = useState({});
+  const [loading, setLoading]   = useState(true);
   const [noConfig, setNoConfig] = useState(false);
 
+  // хранит последний ISO timestamp, чтобы back-end понимал, с какого момента отдавать
+  const lastUpdateRef = useRef(null);
+
   useEffect(() => {
-    if (!userId) {
-      navigate('/login', { replace: true });
-      return;
-    }
-    (async () => {
+    let intervalId;
+
+    // инициализируем last_update текущим временем
+    lastUpdateRef.current = new Date().toISOString();
+
+    const fetchData = async () => {
       try {
-        await axios.get(`/api/configuration/${userId}/${equipmentId}`);
+        const params = `?last_update=${encodeURIComponent(lastUpdateRef.current)}`;
+        const res = await axios.get(
+          `/api/configuration/1/${equipmentId}/apply${params}`
+        );
+        const data = res.data.result || {};
+        setResult(data);
+        setLoading(false);
+
+        // обновляем last_update на самое позднее значение из каждого блока
+        Object.values(data).forEach(block => {
+          const xs = block.x_values;
+          if (xs && xs.length) {
+            lastUpdateRef.current = xs[xs.length - 1];
+          }
+        });
       } catch (err) {
         if (err.response?.status === 404) {
           setNoConfig(true);
           setLoading(false);
-          return;
+        } else {
+          console.error('Ошибка при получении данных:', err);
         }
       }
-      const currentDate = new Date();
-      const dateTimeString = currentDate.toISOString();
-      const { data } = await axios.get(
-        `/api/configuration/${userId}/${equipmentId}/apply?last_update=${dateTimeString}`
-      );
-      setResult(data.result || {});
-      setLoading(false);
-    })();
-  }, [userId, equipmentId, navigate]);
+    };
+
+    // проверка существования конфигурации и запуск опроса
+    axios.get(`/api/configuration/1/${equipmentId}`)
+      .then(() => {
+        fetchData();                  // первый запрос сразу
+        intervalId = setInterval(fetchData, 5000); // затем каждые 5 сек
+      })
+      .catch(err => {
+        if (err.response?.status === 404) {
+          setNoConfig(true);
+          setLoading(false);
+        } else {
+          console.error(err);
+        }
+      });
+
+    return () => clearInterval(intervalId);
+  }, [equipmentId]);
 
   if (loading) {
     return (
@@ -56,6 +95,7 @@ export default function VisualizationPage() {
       </Box>
     );
   }
+
   if (noConfig) {
     return (
       <Container sx={{ mt: 4 }}>
@@ -86,7 +126,13 @@ export default function VisualizationPage() {
           <Typography>Нет данных для отображения графиков.</Typography>
         )}
         {charts.map(([blockId, { x_values, y_values }]) => {
-          const data = x_values.map((x, i) => ({ x, y: y_values[i] }));
+          // Ограничиваем максимум 200 последних точек
+          const total = x_values.length;
+          const start = Math.max(0, total - 200);
+          const xs = x_values.slice(start);
+          const ys = y_values.slice(start);
+          const data = xs.map((x, i) => ({ x, y: ys[i] }));
+
           return (
             <Grid item xs={12} md={6} key={blockId}>
               <Typography variant="h6">Блок {blockId}</Typography>
@@ -101,7 +147,9 @@ export default function VisualizationPage() {
                     type="monotone"
                     dataKey="y"
                     name="Значение"
+                    stroke="blue"     // синяя линия
                     dot={false}
+                    isAnimationActive={false}
                   />
                 </LineChart>
               </ResponsiveContainer>

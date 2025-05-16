@@ -80,7 +80,7 @@ def create_app():
         # создание начальных данных
         create_roles_and_users()
         create_sensors_and_equipment()
-        insert_bulk_data(5000)
+        #insert_bulk_data(5000)
 
     # Регистрация всех маршрутов
     from app.routes import register_routes

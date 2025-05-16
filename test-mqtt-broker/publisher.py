@@ -83,6 +83,10 @@ try:
         #client.publish("sensor/1", "Ping!")
         # Публикация в MQTT
         result = client.publish(topic="sensor/1", payload=json.dumps(message), qos=1)
+        #result = client.publish(topic="sensor/4", payload=json.dumps(message), qos=1)
+        #result = client.publish(topic="sensor/5", payload=json.dumps(message), qos=1)
+
+
         # if result.rc == mqtt.MQTT_ERR_SUCCESS:
         #     print(f"Отправлено: '{message}'")
         # else:
@@ -90,7 +94,7 @@ try:
         mes_count += 1
         if mes_count % 100 == 0:
             print(f"Отправлено {mes_count} сообщений")
-        time.sleep(0.01)
+        time.sleep(0.1)
 except Exception as e:
     print(f"Ошибка: {e}")
 finally:
